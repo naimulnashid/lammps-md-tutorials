@@ -15,13 +15,13 @@ This repository is a project showcase, not a maintained library.
 <td width="33%" valign="top"><b>2 · Reactive silica</b> (VMD)<br><a href="https://youtu.be/Iwgavmr_3eg"><img src="https://img.youtube.com/vi/Iwgavmr_3eg/mqdefault.jpg" width="100%" alt="Video thumbnail: silica stretched with ReaxFF, rendered in VMD"></a></td>
 </tr>
 <tr>
-<td width="33%" valign="top"><b>3 · Nanosheared electrolyte</b> (VMD)<br><a href="https://youtu.be/NPZN1pWHdAg"><img src="https://img.youtube.com/vi/NPZN1pWHdAg/mqdefault.jpg" width="100%" alt="Video thumbnail: water and ions sheared between two walls, rendered in VMD"></a></td>
+<td width="33%" valign="top"><b>3 · Electrolyte</b> (VMD)<br><a href="https://youtu.be/NPZN1pWHdAg"><img src="https://img.youtube.com/vi/NPZN1pWHdAg/mqdefault.jpg" width="100%" alt="Video thumbnail: water and ions sheared between two walls, rendered in VMD"></a></td>
 <td width="33%" valign="top"><b>4 · Polymer in water</b> (VMD)<br><a href="https://youtu.be/5zMRI32hJl0"><img src="https://img.youtube.com/vi/5zMRI32hJl0/mqdefault.jpg" width="100%" alt="Video thumbnail: a PEG chain pulled in water, rendered in VMD"></a></td>
 <td width="33%" valign="top"><b>5 · Carbon nanotube</b> (VMD)<br><a href="https://youtu.be/JjPgQQyYcmM"><img src="https://img.youtube.com/vi/JjPgQQyYcmM/mqdefault.jpg" width="100%" alt="Video thumbnail: a carbon nanotube pulled apart, rendered in VMD"></a></td>
 </tr>
 <tr>
-<td width="33%" valign="top"><b>6 · Amorphous polyethylene</b> (OVITO)<br><a href="https://youtu.be/ERLaUkaJyC8"><img src="https://img.youtube.com/vi/ERLaUkaJyC8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in OVITO"></a></td>
-<td width="33%" valign="top"><b>6 · Amorphous polyethylene</b> (VMD)<br><a href="https://youtu.be/JYw-HjiFnr8"><img src="https://img.youtube.com/vi/JYw-HjiFnr8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in VMD"></a></td>
+<td width="33%" valign="top"><b>6 · Polyethylene</b> (OVITO)<br><a href="https://youtu.be/ERLaUkaJyC8"><img src="https://img.youtube.com/vi/ERLaUkaJyC8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in OVITO"></a></td>
+<td width="33%" valign="top"><b>6 · Polyethylene</b> (VMD)<br><a href="https://youtu.be/JYw-HjiFnr8"><img src="https://img.youtube.com/vi/JYw-HjiFnr8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in VMD"></a></td>
 </tr>
 </table>
 
