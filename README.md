@@ -27,11 +27,6 @@ This repository is a project showcase, not a maintained library.
 
 Renders of each exercise, made in OVITO and VMD in July and August 2024 ([full playlist](https://www.youtube.com/playlist?list=PLRI73rbd0Jos7EY_RV9PgzpV-ffb6yA0w)). The trajectory files they were made from are not kept here (see Development).
 
-![Stress-strain curve of the 108,000-atom aluminum crystal compressed along [100] at 300 K: the axial stress rises linearly to a peak of about 6 GPa near 10% strain, drops sharply to about 1.3 GPa as the crystal yields, and stays there to 20% strain; the two lateral stresses stay near zero](01-aluminum-compression/108000-atoms-300K/Plot/StressStrainPlot.png)
-
-Uniaxial compression of a 108,000-atom aluminum crystal at 300 K, plotted with [`StressStrainPlot.m`](01-aluminum-compression/108000-atoms-300K/Plot/StressStrainPlot.m). Red is the stress along the loading direction; blue and green are the two lateral stresses, held near zero by the barostat.
-
-
 ## Features
 
 | Exercise | What it simulates | Force field and method |
