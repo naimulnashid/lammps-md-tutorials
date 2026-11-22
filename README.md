@@ -4,6 +4,8 @@ Six molecular-dynamics exercises in LAMMPS: compressing an aluminum crystal, def
 
 This repository is a project showcase, not a maintained library.
 
+![Visual abstract: annotated LAMMPS inputs feed six exercises (aluminum compression, reactive silica, a sheared electrolyte, a polymer in water, a carbon nanotube and amorphous polyethylene), each with what it outputs; the result panel plots the 108,000-atom aluminum stress-strain curves from the output files, peaking at 8.30 GPa at 10 K and 6.07 GPa at 300 K](assets/visual-abstract.png)
+
 ## Demo
 
 ![Stress-strain curve of the 108,000-atom aluminum crystal compressed along [100] at 300 K: the axial stress rises linearly to a peak of about 6 GPa near 10% strain, drops sharply to about 1.3 GPa as the crystal yields, and stays there to 20% strain; the two lateral stresses stay near zero](01-aluminum-compression/108000-atoms-300K/Plot/StressStrainPlot.png)
