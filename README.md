@@ -8,11 +8,29 @@ This repository is a project showcase, not a maintained library.
 
 ## Demo
 
+<table>
+<tr>
+<td width="33%" valign="top"><b>1 · Aluminum compression</b> (OVITO)<br><a href="https://youtu.be/MAqs_rzF99Q"><img src="https://img.youtube.com/vi/MAqs_rzF99Q/mqdefault.jpg" width="100%" alt="Video thumbnail: aluminum crystal compressed along [100], rendered in OVITO"></a></td>
+<td width="33%" valign="top"><b>2 · Reactive silica</b> (OVITO)<br><a href="https://youtu.be/7WGU4Vd_EPI"><img src="https://img.youtube.com/vi/7WGU4Vd_EPI/mqdefault.jpg" width="100%" alt="Video thumbnail: silica stretched with ReaxFF, rendered in OVITO"></a></td>
+<td width="33%" valign="top"><b>2 · Reactive silica</b> (VMD)<br><a href="https://youtu.be/Iwgavmr_3eg"><img src="https://img.youtube.com/vi/Iwgavmr_3eg/mqdefault.jpg" width="100%" alt="Video thumbnail: silica stretched with ReaxFF, rendered in VMD"></a></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><b>3 · Nanosheared electrolyte</b> (VMD)<br><a href="https://youtu.be/NPZN1pWHdAg"><img src="https://img.youtube.com/vi/NPZN1pWHdAg/mqdefault.jpg" width="100%" alt="Video thumbnail: water and ions sheared between two walls, rendered in VMD"></a></td>
+<td width="33%" valign="top"><b>4 · Polymer in water</b> (VMD)<br><a href="https://youtu.be/5zMRI32hJl0"><img src="https://img.youtube.com/vi/5zMRI32hJl0/mqdefault.jpg" width="100%" alt="Video thumbnail: a PEG chain pulled in water, rendered in VMD"></a></td>
+<td width="33%" valign="top"><b>5 · Carbon nanotube</b> (VMD)<br><a href="https://youtu.be/JjPgQQyYcmM"><img src="https://img.youtube.com/vi/JjPgQQyYcmM/mqdefault.jpg" width="100%" alt="Video thumbnail: a carbon nanotube pulled apart, rendered in VMD"></a></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><b>6 · Amorphous polyethylene</b> (OVITO)<br><a href="https://youtu.be/ERLaUkaJyC8"><img src="https://img.youtube.com/vi/ERLaUkaJyC8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in OVITO"></a></td>
+<td width="33%" valign="top"><b>6 · Amorphous polyethylene</b> (VMD)<br><a href="https://youtu.be/JYw-HjiFnr8"><img src="https://img.youtube.com/vi/JYw-HjiFnr8/mqdefault.jpg" width="100%" alt="Video thumbnail: amorphous polyethylene stretched, rendered in VMD"></a></td>
+</tr>
+</table>
+
+Renders of each exercise, made in OVITO and VMD in July and August 2024 ([full playlist](https://www.youtube.com/playlist?list=PLRI73rbd0Jos7EY_RV9PgzpV-ffb6yA0w)). The trajectory files they were made from are not kept here (see Development).
+
 ![Stress-strain curve of the 108,000-atom aluminum crystal compressed along [100] at 300 K: the axial stress rises linearly to a peak of about 6 GPa near 10% strain, drops sharply to about 1.3 GPa as the crystal yields, and stays there to 20% strain; the two lateral stresses stay near zero](01-aluminum-compression/108000-atoms-300K/Plot/StressStrainPlot.png)
 
 Uniaxial compression of a 108,000-atom aluminum crystal at 300 K, plotted with [`StressStrainPlot.m`](01-aluminum-compression/108000-atoms-300K/Plot/StressStrainPlot.m). Red is the stress along the loading direction; blue and green are the two lateral stresses, held near zero by the barostat.
 
-No video is linked yet. The trajectories were rendered in OVITO and VMD; the renders and the trajectory files are not kept here (see Development).
 
 ## Features
 
