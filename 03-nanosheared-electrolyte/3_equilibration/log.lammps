@@ -1,0 +1,253 @@
+LAMMPS (27 Jun 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Loaded 1 plugins from C:\Users\<user>\AppData\Local\LAMMPS 64-bit 27Jun2024-MSMPI\plugins
+boundary p p f
+units real
+atom_style full
+bond_style harmonic
+angle_style harmonic
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0
+kspace_style pppm/tip4p 1.0e-4
+kspace_modify slab 3.0
+
+read_data ../minimization/system.data
+Reading data file ...
+  orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  1 by 2 by 2 MPI processor grid
+  reading atoms ...
+  1665 atoms
+  reading velocities ...
+  1665 velocities
+  scanning bonds ...
+  2 = max bonds/atom
+  scanning angles ...
+  1 = max angles/atom
+  orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  1 by 2 by 2 MPI processor grid
+  reading bonds ...
+  802 bonds
+  reading angles ...
+  401 angles
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        0        0       
+  special bond factors coul:  0        0        0       
+     2 = max # of 1-2 neighbors
+     1 = max # of 1-3 neighbors
+     1 = max # of 1-4 neighbors
+     2 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+  read_data CPU = 0.024 seconds
+
+include ../PARM.lammps
+mass 1 15.9994 # water
+mass 2 1.008 # water
+mass 3 28.990 # ion
+mass 4 35.453 # ion
+mass 5 26.9815 # wall
+
+pair_coeff 1 1 0.185199 3.1589 # water
+pair_coeff 2 2 0.0 1.0 # water
+pair_coeff 3 3 0.04690 2.4299 # ion
+pair_coeff 4 4 0.1500 4.04470 # ion
+pair_coeff 5 5 11.697 2.574 # wall
+pair_coeff 1 5 0.4 2.86645 # water-wall
+
+bond_coeff 1 0 0.9572 # water
+
+angle_coeff 1 0 104.52 # water
+include ../GROUP.lammps
+group H2O type 1 2
+1203 atoms in group H2O
+group Na type 3
+15 atoms in group Na
+group Cl type 4
+15 atoms in group Cl
+group ions union Na Cl
+30 atoms in group ions
+group fluid union H2O ions
+1233 atoms in group fluid
+
+group wall type 5
+432 atoms in group wall
+region rtop block INF INF INF INF 0 INF
+region rbot block INF INF INF INF INF 0
+group top region rtop
+837 atoms in group top
+group bot region rbot
+828 atoms in group bot
+group walltop intersect wall top
+216 atoms in group walltop
+group wallbot intersect wall bot
+216 atoms in group wallbot
+
+fix mynve all nve
+fix myber all temp/berendsen 300 300 100
+fix myshk H2O shake 1.0e-4 200 0 b 1 a 1
+Finding SHAKE clusters ...
+       0 = # of size 2 clusters
+       0 = # of size 3 clusters
+       0 = # of size 4 clusters
+     401 = # of frozen angles
+  find clusters CPU = 0.000 seconds
+fix myrct all recenter NULL NULL 0
+timestep 1.0
+
+dump mydmp all atom 1000 dump.lammpstrj
+thermo 500
+variable walltopz equal xcm(walltop,z)
+variable wallbotz equal xcm(wallbot,z)
+variable deltaz equal v_walltopz-v_wallbotz
+fix myat1 all ave/time 100 1 100 v_deltaz file interwall_distance.dat
+
+run 30000
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- Type Label Framework: https://doi.org/10.1021/acs.jpcb.3c08419
+
+@Article{Gissinger24,
+ author = {Jacob R. Gissinger, Ilia Nikiforov, Yaser Afshar, Brendon Waters, Moon-ki Choi, Daniel S. Karls, Alexander Stukowski, Wonpil Im, Hendrik Heinz, Axel Kohlmeyer, and Ellad B. Tadmor},
+ title = {Type Label Framework for Bonded Force Fields in LAMMPS},
+ journal = {J. Phys. Chem. B},
+ year =    2024,
+ volume =  128,
+ number =  13,
+ pages =   {3282–-3297}
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+PPPM initialization ...
+  extracting TIP4P info from pair style
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.22477066
+  grid = 12 12 40
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.023142321
+  estimated relative force accuracy = 6.9692414e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 8892 2376
+WARNING: Communication cutoff 0 is shorter than a bond length based estimate of 3.4358. This may lead to errors. (src/comm.cpp:730)
+WARNING: Increasing communication cutoff to 15.1118 for TIP4P pair style (src/KSPACE/pair_lj_cut_tip4p_long.cpp:478)
+Generated 9 of 10 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 14.3092
+  ghost atom cutoff = 15.1118
+  binsize = 7.1546, bins = 4 4 6
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut/tip4p/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 9.679 | 9.697 | 9.716 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   201.40264     -38476.058      0             -37717.825     -21636.798    
+       500   278.66612     -37933.207      0             -36884.095     -19308.766    
+      1000   302.67271     -37840.626      0             -36701.135     -19227.859    
+      1500   295.66063     -37752.703      0             -36639.611     -16512.309    
+      2000   308.8918      -37764.551      0             -36601.647     -15763.196    
+      2500   307.65573     -37750.852      0             -36592.601     -15435.972    
+      3000   297.15672     -37654.37       0             -36535.645     -15573.985    
+      3500   300.00755     -37645.302      0             -36515.845     -16716.058    
+      4000   291.99237     -37640.715      0             -36541.433     -16129.37     
+      4500   300.16542     -37662.041      0             -36531.989     -16882.329    
+      5000   302.26309     -37673.201      0             -36535.252     -17785.274    
+      5500   292.93942     -37670.866      0             -36568.018     -17366.328    
+      6000   302.84126     -37759.19       0             -36619.065     -16843.115    
+      6500   291.92399     -37738.726      0             -36639.702     -16095.426    
+      7000   298.1292      -37839.359      0             -36716.973     -15153.651    
+      7500   299.08217     -37832.029      0             -36706.056     -15738.766    
+      8000   300.54093     -37815.201      0             -36683.735     -16310.807    
+      8500   293.80712     -37772.235      0             -36666.121     -16494.295    
+      9000   302.6011      -37798.916      0             -36659.694     -15660.658    
+      9500   307.24879     -37820.349      0             -36663.63      -16569.779    
+     10000   297.69114     -37786.041      0             -36665.305     -15478.052    
+     10500   293.81059     -37798.242      0             -36692.114     -16079.14     
+     11000   311.40827     -37865.689      0             -36693.311     -17147.78     
+     11500   298.34455     -37859.2        0             -36736.003     -15970.89     
+     12000   295.98164     -37848.626      0             -36734.325     -15754.875    
+     12500   300.3972      -37913.864      0             -36782.94      -16119.436    
+     13000   296.13803     -37890.889      0             -36776         -15666.607    
+     13500   294.17118     -37886.336      0             -36778.851     -17064.047    
+     14000   305.627       -37894.012      0             -36743.399     -16536.137    
+     14500   307.20308     -37913.37       0             -36756.823     -17230.746    
+     15000   297.77089     -37909.956      0             -36788.919     -16229.947    
+     15500   301.77402     -37917.615      0             -36781.507     -15659.451    
+     16000   292.06765     -37883.75       0             -36784.184     -15691.918    
+     16500   305.75127     -37944.263      0             -36793.182     -16158.859    
+     17000   290.80285     -37870.707      0             -36775.904     -15124.328    
+     17500   307.54069     -37941.365      0             -36783.548     -16671.231    
+     18000   299.90929     -37927.272      0             -36798.185     -16500.185    
+     18500   298.42183     -37914.743      0             -36791.255     -17267.974    
+     19000   296.35564     -37928.547      0             -36812.838     -15623.121    
+     19500   291.86959     -37941.158      0             -36842.338     -14094.91     
+     20000   297.74416     -37961.976      0             -36841.04      -14444.067    
+     20500   300.11953     -37945.058      0             -36815.179     -14824.336    
+     21000   304.04991     -37996.462      0             -36851.786     -15293.775    
+     21500   301.11654     -38027.578      0             -36893.945     -15591.294    
+     22000   304.50934     -37996.231      0             -36849.825     -15688.772    
+     22500   308.55244     -38014.431      0             -36852.804     -15828.758    
+     23000   291.09089     -37969.443      0             -36873.554     -15568.154    
+     23500   310.71783     -38064.33       0             -36894.551     -15707.629    
+     24000   297.59745     -38001.692      0             -36881.308     -15438.987    
+     24500   304.20748     -38064.288      0             -36919.019     -14109.216    
+     25000   306.1507      -38040.953      0             -36888.368     -15411.919    
+     25500   285.78096     -37978.015      0             -36902.117     -15731.982    
+     26000   296.67157     -38006.866      0             -36889.968     -15025.349    
+     26500   297.75039     -38058.668      0             -36937.708     -16105.386    
+     27000   297.64512     -38043.383      0             -36922.819     -15245.644    
+     27500   301.46756     -38069.151      0             -36934.197     -15380.055    
+     28000   295.21619     -38000.428      0             -36889.009     -15806.721    
+     28500   303.69739     -38061.966      0             -36918.617     -16628.322    
+     29000   310.22723     -38108.851      0             -36940.919     -14432.893    
+     29500   302.90598     -38089.649      0             -36949.28      -13473.101    
+     30000   303.51546     -38091.581      0             -36948.917     -14375.24     
+Loop time of 121.449 on 4 procs for 30000 steps with 1665 atoms
+
+Performance: 21.342 ns/day, 1.125 hours/ns, 247.017 timesteps/s, 411.283 katom-step/s
+12.7% CPU use with 4 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 62.463     | 76.622     | 89.907     | 135.7 | 63.09
+Bond    | 0.013535   | 0.014435   | 0.015071   |   0.5 |  0.01
+Kspace  | 18.947     | 32.234     | 46.389     | 209.2 | 26.54
+Neigh   | 6.1021     | 6.1117     | 6.1208     |   0.3 |  5.03
+Comm    | 3.234      | 3.3206     | 3.4083     |   4.6 |  2.73
+Output  | 0.019618   | 0.020835   | 0.021789   |   0.6 |  0.02
+Modify  | 2.7818     | 2.8629     | 2.943      |   4.7 |  2.36
+Other   |            | 0.2634     |            |       |  0.22
+
+Nlocal:         416.25 ave         427 max         409 min
+Histogram: 1 0 1 1 0 0 0 0 0 1
+Nghost:        5817.25 ave        5825 max        5801 min
+Histogram: 1 0 0 0 0 0 0 1 0 2
+Neighs:         200900 ave      238371 max      163143 min
+Histogram: 1 1 0 0 0 0 0 0 1 1
+
+Total # of neighbors = 803602
+Ave neighs/atom = 482.64384
+Ave special neighs/atom = 1.445045
+Neighbor list builds = 1463
+Dangerous builds = 0
+write_data system.data nocoeff
+System init for write_data ...
+PPPM initialization ...
+  extracting TIP4P info from pair style
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.22477066
+  grid = 12 12 40
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.023142321
+  estimated relative force accuracy = 6.9692414e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 8892 2376
+Generated 9 of 10 mixed pair_coeff terms from geometric mixing rule
+Total wall time: 0:02:01

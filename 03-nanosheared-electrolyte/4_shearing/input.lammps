@@ -1,0 +1,66 @@
+## System Initialization
+boundary p p f    # Sets the boundary conditions of the simulation box. p stands for periodic boundaries in the x and y directions, and f stands for fixed (non-periodic) boundaries in the z direction.
+units real    # Specifies the unit system to be used. In the real units system, distances are measured in angstroms, energies in kcal/mol, and time in femtoseconds.
+atom_style full    # Indicates that the atoms in the simulation have full information including bonds, angles, dihedrals, and charges, which is typical for molecular simulations.
+bond_style harmonic    # Define the bond styles as harmonic, meaning the potential energy is modeled as a harmonic (spring-like) function.
+angle_style harmonic    # Define the angle styles as harmonic, meaning the potential energy is modeled as a harmonic (spring-like) function.
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0    # Uses the TIP4P water model with long-range Coulombic interactions. The parameters define how the hydrogen and oxygen atoms are modeled, the charge sites, and the cutoff for Lennard-Jones interactions.
+kspace_style pppm/tip4p 1.0e-4    # Specifies the use of the particle-particle particle-mesh (PPPM) algorithm for computing long-range Coulombic interactions, adapted for the TIP4P water model. The accuracy is set to 1.0e-4.
+kspace_modify slab 3.0    # Modifies the PPPM calculation to account for the 2D periodicity (non-periodic in the z direction) by using a slab correction method, with a vacuum spacing of 3.0 units.
+
+
+## System Setup
+read_data ../3_equilibration/system.data    # Reads the initial configuration of atoms, bonds, etc., from a file named system.data located in the ../equilibration directory.
+
+include ../PARM.lammps    # Include external files that contain parameter settings.
+include ../GROUP.lammps    # Include external files that contain group definitions.
+
+
+## Dynamics and Thermostatting
+fix mynve all nve    # Applies the NVE (constant Number of particles, Volume, and Energy) integration method to all atoms, allowing them to evolve naturally without temperature or pressure control.
+
+compute Tfluid fluid temp/partial 0 1 1    # Computes the temperature of the fluid group while excluding the x-component from the calculation (useful for directional flows).
+fix myber1 fluid temp/berendsen 300 300 100    # Applies the Berendsen thermostat to the fluid group, maintaining the temperature at 300 K with a relaxation time of 100 time units
+fix_modify myber1 temp Tfluid    # Ties the temperature calculation to the Tfluid compute.
+
+compute Twall wall temp/partial 0 1 1
+fix myber2 wall temp/berendsen 300 300 100
+fix_modify myber2 temp Twall    # Similar to the fluid group, but for the wall atoms, maintaining the wall temperature at 300 K.
+
+fix myshk H2O shake 1.0e-4 200 0 b 1 a 1    # Applies the SHAKE algorithm to the water molecules (H2O group) to constrain bond lengths and angles during the simulation.
+fix myrct all recenter NULL NULL 0    # Recenters the entire system along the z-axis to prevent drift in the z-direction.
+
+
+## Forces and Velocities on Walls
+fix mysf1 walltop setforce 0 NULL NULL
+fix mysf2 wallbot setforce 0 NULL NULL    # Constrains the motion of the wall atoms in the x and y directions, allowing only z-directional forces.
+
+velocity wallbot set -2e-4 NULL NULL
+velocity walltop set 2e-4 NULL NULL    #  Sets the velocities of the bottom and top wall atoms in the x-direction, moving them in opposite 
+
+
+## Output and Thermodynamics
+dump mydmp all atom 500 dump.lammpstrj    # Outputs atom positions and velocities every 500 timesteps to a dump file for visualization.
+
+thermo 50    # Prints thermodynamic information every 50 timesteps.
+thermo_modify temp Tfluid    # Modifies the output to use the computed Tfluid temperature.
+
+compute cc1 H2O chunk/atom bin/1d z 0.0 1.0
+compute cc2 wall chunk/atom bin/1d z 0.0 1.0
+compute cc3 ions chunk/atom bin/1d z 0.0 1.0    # Divides the H2O, wall, and ion groups into 1D bins along the z-axis, computing properties for each bin.
+
+fix myac1 H2O ave/chunk 10 15000 200000 &
+cc1 density/mass vx file water.profile_1A.dat
+fix myac2 wall ave/chunk 10 15000 200000 &
+cc2 density/mass vx file wall.profile_1A.dat
+fix myac3 ions ave/chunk 10 15000 200000 &
+cc3 density/mass vx file ions.profile_1A.dat    # Averages the mass density and x-velocity over time for the H2O, wall, and ion groups in each bin, saving the data to respective files.
+
+
+## Force Averaging and Execution
+fix myat1 all ave/time 10 100 1000 f_mysf1[1] f_mysf2[1] file forces.dat    # Averages the forces on the top and bottom walls over time and writes the results to forces.dat.
+
+timestep 1.0    # Sets the timestep for integration to 1 femtosecond.
+run 200000    # Runs the simulation for 200,000 timesteps.
+
+write_data system.data nocoeff    # Writes the final system configuration to a data file, excluding coefficients.

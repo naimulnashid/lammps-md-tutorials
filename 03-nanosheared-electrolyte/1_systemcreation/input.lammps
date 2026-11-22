@@ -1,0 +1,60 @@
+## System Initialization
+boundary p p f    # Sets periodic boundary conditions in the x and y directions and a fixed boundary condition in the z direction.
+units real    # Specifies that the simulation uses real units (e.g., distance in Ångströms, energy in kcal/mol, time in femtoseconds).
+atom_style full    # Specifies that the atoms can have bonds, angles, dihedrals, and charges.
+bond_style harmonic
+angle_style harmonic    # Specifies that the interactions between bonded atoms (bonds and angles) are modeled using harmonic potentials.
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0    # Defines the Lennard-Jones (LJ) potential and long-range Coulombic interactions optimized for the TIP4P water model, with specific parameters including cutoffs and the oxygen-hydrogen distance.
+kspace_style pppm/tip4p 1.0e-4    # Uses the Particle-Particle Particle-Mesh (PPPM) method to compute long-range Coulombic interactions with the TIP4P water model, with a tolerance of 1.0e-4.
+kspace_modify slab 3.0    # Modifies the k-space calculation to apply slab geometry correction for 2D periodic systems, with a slab spacing of 3.0 Å.
+
+
+## Lattice and Simulation Box Setup
+lattice fcc 4.04    # Defines a face-centered cubic (FCC) lattice with a lattice constant of 4.04 Å. This lattice will be used to create regions of atoms.
+region box block -3 3 -3 3 -5 5    # Defines a simulation box region with dimensions from -3 to 3 in the x and y directions, and -5 to 5 in the z direction.
+create_box 5 box &
+bond/types 1 &
+angle/types 1 &    
+extra/bond/per/atom 2 &
+extra/angle/per/atom 1 &
+extra/special/per/atom 2
+# Creates a simulation box that can accommodate 5 atom types.
+# Specifies that the system will have 1 bond type and 1 angle type.
+# Allocates additional bond and angle slots for each atom.
+# Allocates additional special neighbor slots (for exclusions or special interactions) per atom.
+
+
+## Wall Regions Creation
+region rbotwall block -3 3 -3 3 -4 -3    # Defines a bottom wall region between z = -4 and z = -3.
+region rtopwall block -3 3 -3 3 3 4    # Defines a top wall region between z = 3 and z = 4.
+region rwall union 2 rbotwall rtopwall    # Combines the bottom and top wall regions into a single region named rwall.
+
+create_atoms 5 region rwall    # Creates atoms of type 5 within the rwall region (top and bottom walls).
+
+
+## Liquid Region and Molecule Insertion
+region rliquid block INF INF INF INF -2 2    # Defines a liquid region with no boundaries in the x and y directions (infinite), and boundaries between z = -2 and z = 2.
+molecule h2omol RigidH2O.txt    # Loads a water molecule structure from the file RigidH2O.txt.
+create_atoms 0 region rliquid mol h2omol 482793    # Inserts water molecules (h2omol) into the rliquid region with a specified random seed (482793).
+
+
+## Adding Ions
+create_atoms 3 random 15 52802 rliquid overlap 0.3 maxtry 500    # Randomly places 15 atoms of type 3 (likely cations) in the rliquid region, ensuring they don't overlap more than 0.3 Å, with a maximum of 500 attempts.
+create_atoms 4 random 15 90182 rliquid overlap 0.3 maxtry 500    # Randomly places 15 atoms of type 4 (likely anions) in the rliquid region under similar constraints.
+
+set type 3 charge 1    # Assigns a charge of +1 to atoms of type 3 (cations).
+set type 4 charge -1    # Assigns a charge of -1 to atoms of type 4 (anions).
+
+
+## Including Parameters and Group Definitions
+include ../PARM.lammps
+include ../GROUP.lammps    # Includes additional parameter and group definition files that define force field parameters, bonds, angles, and groups for the simulation.
+
+
+## Deleting Atoms and Final System Setup
+delete_atoms random fraction 0.15 yes H2O NULL 482793 mol yes    # Deletes 15% of the water molecules randomly from the system.
+
+run 0    # Performs a "run" with 0 timesteps to initialize the system, compute initial values, and set up neighbor lists without advancing the simulation.
+
+write_data system.data nocoeff    # Saves the system configuration to a data file (system.data) without including potential or force coefficients.
+write_dump all atom dump.lammpstrj    # Outputs the current atomic configuration to a dump file (dump.lammpstrj) for visualization purposes.

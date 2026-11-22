@@ -1,0 +1,15 @@
+LAMMPS (27 Jun 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Loaded 1 plugins from C:\Users\<user>\AppData\Local\LAMMPS 64-bit 27Jun2024-MSMPI\plugins
+## This LAMMPS script is designed for molecular dynamics (MD) simulations, including equilibration stages and a uniaxial tensile deformation simulation. The script utilizes the Dreiding force field, which is commonly used for simulating organic and inorganic materials.
+
+## Variables
+variable simname string "PE_nc10_cl1000"
+
+# Initialization
+units	real
+boundary p p p
+atom_style molecular
+log log.${simname}.txt
+log log.PE_nc10_cl1000.txt

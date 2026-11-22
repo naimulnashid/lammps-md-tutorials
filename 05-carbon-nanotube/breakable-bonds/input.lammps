@@ -1,0 +1,72 @@
+## Input File Initialization
+variable T equal 300    # Defines a variable T with a value of 300, representing the temperature in Kelvin.
+
+
+## Initialization
+units metal    # Sets the units to "metal," which uses specific units for time (picoseconds), length (Angstroms), energy (eV), etc.
+atom_style atomic    # Specifies that atoms will be treated individually, without bonds or angles (suitable for atomic simulations).
+boundary p p p    # Sets periodic boundary conditions in all three dimensions (x, y, z).
+pair_style airebo 2.5 1 1    # Specifies the AIREBO (Adaptive Intermolecular Reactive Empirical Bond Order) potential with a cutoff of 2.5 Å for non-bonded interactions and two additional parameters for controlling bond-order interactions.
+
+
+## System Definition
+read_data cnt_atom.data    Reads the atomic positions, types, and box dimensions from the file cnt_atom.data.
+pair_coeff * * CH.airebo C    Assigns the AIREBO potential coefficients from the CH.airebo file for carbon atoms (C).
+
+change_box all x final -40 40 y final -40 40 z final -60 60    # Rescales the simulation box to extend from -40 to 40 in x and y, and -60 to 60 in z.
+
+
+## Grouping Atoms and Initial Setup
+group carbon_atoms type 1    # Creates a group called carbon_atoms consisting of all atoms of type 1 (carbon).
+
+variable carbon_xcm equal -1*xcm(carbon_atoms,x)    # Calculates the negative x-coordinate of the center of mass (xcm) of the carbon atoms and stores it in carbon_xcm.
+variable carbon_ycm equal -1*xcm(carbon_atoms,y)    # Calculates the negative y-coordinate of the center of mass (ycm) of the carbon atoms and stores it in carbon_ycm.
+variable carbon_zcm equal -1*xcm(carbon_atoms,z)    # Calculates the negative z-coordinate of the center of mass (zcm) of the carbon atoms and stores it in carbon_zcm.
+displace_atoms carbon_atoms move ${carbon_xcm} ${carbon_ycm} ${carbon_zcm}    # Moves the entire carbon_atoms group so that its center of mass is centered at the origin.
+
+variable zmax equal bound(carbon_atoms,zmax)-0.5    # Calculates the maximum z-boundary of the carbon atoms minus 0.5 Å.
+variable zmin equal bound(carbon_atoms,zmin)+0.5    # Calculates the minimum z-boundary of the carbon atoms plus 0.5 Å.
+region rtop block INF INF INF INF ${zmax} INF    # Defines a region rtop at the top of the CNT.
+region rbot block INF INF INF INF INF ${zmin}    # Defines a region rbot at the bottom of the CNT.
+region rmid block INF INF INF INF ${zmin} ${zmax}    # Defines a region rmid in the middle of the CNT.
+
+group carbon_top region rtop    # Groups atoms in the rtop region into carbon_top.
+group carbon_bot region rbot    # Groups atoms in the rbot region into carbon_bot.
+group carbon_mid region rmid    # Groups atoms in the rmid region into carbon_mid.
+
+variable zmax_del equal ${zmax}-2    # Adjusts the maximum z-boundary by reducing it by 2 Å.
+variable zmin_del equal ${zmin}+2    # Adjusts the minimum z-boundary by reducing it by 2 Å.
+region rdel block INF INF INF INF ${zmin_del} ${zmax_del}    # Defines a region rdel slightly smaller than the original CNT length.
+group rdel region rdel
+delete_atoms random fraction 0.02 no rdel NULL 482793    # Randomly deletes 2% of the atoms in the rdel region, simulating defects.
+
+reset_atoms id sort yes    # Reassigns atom IDs in a sorted manner, improving computational efficiency.
+velocity carbon_mid create ${T} 48455 mom yes rot yes    # Assigns initial velocities to atoms in carbon_mid according to the temperature T (300 K), ensuring zero net momentum and rotation.
+fix mynve all nve    # Applies the NVE (constant Number, Volume, and Energy) integration to all atoms, simulating microcanonical ensemble dynamics.
+compute Tmid carbon_mid temp    # Computes the temperature of the carbon_mid group.
+fix myber carbon_mid temp/berendsen ${T} ${T} 0.1    # Applies the Berendsen thermostat to the carbon_mid group to maintain a constant temperature.
+fix_modify myber temp Tmid    # Modifies the myber fix to use the computed Tmid temperature.
+
+
+## Starting the Simulation
+fix mysf1 carbon_bot setforce 0 0 0    # Fixes the forces on atoms in carbon_bot to zero, effectively pinning them in place.
+fix mysf2 carbon_top setforce 0 0 0    # Fixes the forces on atoms in carbon_top to zero.
+velocity carbon_bot set 0 0 0    # Sets the velocity of carbon_bot atoms to zero.
+velocity carbon_top set 0 0 0    # Sets the velocity of carbon_top atoms to zero.
+
+variable L equal xcm(carbon_top,z)-xcm(carbon_bot,z)    # Calculates the length L of the CNT as the difference between the z-coordinates of the center of mass of carbon_top and carbon_bot.
+fix at1 all ave/time 10 10 100 v_L file output_cnt_length.dat    # Averages the CNT length over time and writes the results to output_cnt_length.dat.
+fix at2 all ave/time 10 10 100 f_mysf1[1] f_mysf2[1] & file output_edge_force.dat    # Averages the forces on carbon_bot and carbon_top and writes the results to output_edge_force.dat.
+
+dump mydmp all atom 1000 dump.lammpstrj    # Dumps atom positions to dump.lammpstrj every 1000 timesteps, allowing for visualization and analysis
+
+thermo 100    # Prints thermodynamic information every 100 timesteps.
+thermo_modify temp Tmid    # Modifies the thermodynamic output to use Tmid as the temperature.
+
+timestep 0.0005    # Sets the timestep for the simulation to 0.0005 picoseconds.
+run 5000    # Runs the simulation for 5000 timesteps (2.5 picoseconds).
+
+
+## Launching the Deformation
+velocity carbon_top set 0 0 0.15    # Sets the velocity of the carbon_top group in the z-direction to 0.15 Å/ps (equivalent to 15 m/s), initiating tensile deformation.
+run 280000    # Runs the simulation for 280,000 timesteps, corresponding to a longer period of deformation (140 ps).

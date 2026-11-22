@@ -1,0 +1,63 @@
+# Stretching the PEG molecul
+
+## Initialization and Setup
+variable f0 equal 5    # Defines a variable f0 with a value of 5, which will be used later to apply a force of 5 units (likely in kcal/mol·Å) during the stretching phase.
+
+units real    # Sets the units to "real," commonly used for molecular simulations, where length is in Angstroms, energy is in kcal/mol, and time is in femtoseconds.
+atom_style full    # Specifies that each atom has a full set of molecular data, including bonds, angles, dihedrals, and charges.
+bond_style harmonic    # Uses a harmonic potential for bonds, which penalizes deviations from an equilibrium bond length.
+angle_style harmonic    # Uses a harmonic potential for angles, penalizing deviations from an equilibrium bond angle.
+dihedral_style harmonic    #  Uses a harmonic potential for dihedrals, which controls the rotation around bonds.
+pair_style lj/cut/coul/long 10    # Specifies that Lennard-Jones (LJ) interactions are truncated at 10 Å, while Coulombic interactions are treated with a long-range solver.
+kspace_style pppm 1e-5    # Uses the particle-particle particle-mesh (PPPM) method to calculate long-range Coulombic interactions with an accuracy of 1e-5.
+special_bonds lj 0.0 0.0 0.5 coul 0.0 0.0 1.0 angle yes dihedral yes    # Modifies the nonbonded interactions between atoms in the same molecule based on their connectivity. Here, it scales LJ and Coulomb interactions for 1-4 pairs (atoms separated by three bonds).
+
+
+## System Definition
+read_data ../2_mergePEGH2O/mix.data    # Reads in the atomic coordinates, bond connectivity, atom types, and simulation box dimensions from the file mix.data.
+include ../PARM.lammps    # Includes additional parameters and settings from an external file PARM.lammps.
+
+
+## Grouping Atoms
+group H2O type 8 9    # Creates a group called H2O that includes atoms of types 8 and 9, likely representing water molecules.
+group PEG type 1 2 3 4 5 6 7    # Creates a group called PEG that includes atoms of types 1 to 7, representing the PEG molecule.
+group topull1 type 6    # Creates a group called topull1 that includes atoms of type 6, possibly representing one end of the PEG molecule.
+group topull2 type 7    # Creates a group called topull2 that includes atoms of type 7, possibly representing the other end of the PEG molecule.
+
+
+## Output and Simulation Settings
+dump mydmp all atom 100 dump.lammpstrj    # Dumps atom coordinates to the file dump.lammpstrj every 100 timesteps for visualization.
+
+timestep 1.0    # Sets the timestep to 1.0 femtoseconds.
+fix mynvt all nvt temp 300 300 100    # Applies the NVT ensemble (constant Number, Volume, and Temperature) using a Nose-Hoover thermostat to maintain the temperature at 300 K.
+
+
+## Computing and Averaging Quantities
+variable mytemp equal temp    # Defines a variable mytemp to store the system's temperature.
+fix myat1 all ave/time 10 10 100 v_mytemp file output-temperature.dat    # Averages the temperature over time and writes it to output-temperature.dat.
+
+variable x1 equal xcm(topull1,x)    # Calculates the x-coordinate of the center of mass (xcm) of the topull1 group and stores it in x1.
+variable x2 equal xcm(topull2,x)
+variable y1 equal xcm(topull1,y)
+variable y2 equal xcm(topull2,y)
+variable z1 equal xcm(topull1,z)
+variable z2 equal xcm(topull2,z)
+variable delta_r equal sqrt((v_x1-v_x2)^2+(v_y1-v_y2)^2+(v_z1-v_z2)^2)    # Computes the distance between the centers of mass of topull1 and topull2 and stores it in delta_r.
+
+fix myat2 all ave/time 10 10 100 v_delta_r & 
+    file output-end-to-end-distance.dat    # Averages the end-to-end distance over time and writes it to output-end-to-end-distance.dat.
+compute rgyr PEG gyration    # Computes the radius of gyration of the PEG molecule.
+fix myat3 all ave/time 10 10 100 c_rgyr file gyration-radius.dat    # Averages the radius of gyration over time and writes it to gyration-radius.dat.
+
+thermo 100    # Outputs thermodynamic information every 100 timesteps.
+
+
+## Equilibration Run
+run 30000    # Runs the simulation for 30,000 timesteps (30 ps) to equilibrate the system.
+
+
+## Applying Stretching Force
+fix myaf1 topull1 addforce ${f0} 0 0    # Applies a force of f0 (5 units) in the positive x-direction to atoms in the topull1 group.
+fix myaf2 topull2 addforce -${f0} 0 0    # Applies a force of -f0 (5 units) in the negative x-direction to atoms in the topull2 group, effectively stretching the PEG molecule.
+
+run 30000    # Runs the simulation for another 30,000 timesteps (30 ps) while applying the stretching force.

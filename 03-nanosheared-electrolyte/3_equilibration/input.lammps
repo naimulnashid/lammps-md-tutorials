@@ -1,0 +1,42 @@
+## Initialization
+boundary p p f    # Sets the boundary conditions to periodic (p) in the x and y directions, and fixed (f) in the z direction. This means atoms can move freely across the x and y boundaries, but not through the z-boundary.
+units real    # Specifies that the simulation uses real units (e.g., distance in Ångströms, energy in kcal/mol, time in femtoseconds).
+atom_style full    # Specifies the atom style as "full," which means atoms can have bonds, angles, dihedrals, and charges.
+bond_style harmonic
+angle_style harmonic    # Sets the bond and angle interactions to harmonic potentials, where the energy is proportional to the square of the deviation from equilibrium bond lengths and angles.
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0    #  Defines the pairwise interaction using the Lennard-Jones (LJ) potential and long-range Coulombic interactions, optimized for the TIP4P water model. The parameters specify the TIP4P model and cutoffs.
+kspace_style pppm/tip4p 1.0e-4    # Uses the Particle-Particle Particle-Mesh (PPPM) method to compute long-range Coulombic interactions with the TIP4P water model, using a tolerance of 1.0e-4.
+kspace_modify slab 3.0    # Modifies the k-space calculation for 2D periodic systems, applying a slab correction with a spacing of 3.0 Å. This is necessary due to the fixed boundary condition in the z direction.
+
+
+## Reading and Including Data
+read_data ../2_minimization/system.data    # Reads the atomic configuration and topology from the specified data file.
+
+include ../PARM.lammps    # Includes additional LAMMPS scripts containing parameter definitions.
+include ../GROUP.lammps    # Includes additional LAMMPS scripts containing group definitions.
+
+
+## System Setup and Dynamics
+fix mynve all nve    # Applies the NVE ensemble (constant number of atoms, volume, and energy) to the entire system, integrating the equations of motion.
+fix myber all temp/berendsen 300 300 100    # Applies a Berendsen thermostat to the entire system to maintain the temperature at 300 K, with a damping parameter of 100 fs.
+fix myshk H2O shake 1.0e-4 200 0 b 1 a 1    # Constrains the bond lengths (b) and angles (a) of the water molecules using the SHAKE algorithm, with a tolerance of 1.0e-4.
+fix myrct all recenter NULL NULL 0    # Recenters the system along the z-axis to keep the center of mass at z=0, preventing drift in the z-direction.
+
+timestep 1.0    # Sets the timestep for integration to 1 femtosecond.
+
+
+## Output and Monitoring
+dump mydmp all atom 1000 dump.lammpstrj    # Outputs atom positions and velocities every 1000 timesteps to a dump file for visualization.
+
+thermo 500    # Prints thermodynamic information every 500 timesteps.
+
+variable walltopz equal xcm(walltop,z)    # Calculates the center of mass of the walltop group in the z-direction and stores it in the variable walltopz.
+variable wallbotz equal xcm(wallbot,z)    # Calculates the center of mass of the wallbot group in the z-direction and stores it in the variable wallbotz.
+variable deltaz equal v_walltopz-v_wallbotz    # Calculates the distance between the top and bottom walls in the z-direction by subtracting wallbotz from walltopz.
+
+fix myat1 all ave/time 100 1 100 v_deltaz file interwall_distance.dat    # Averages the distance between the walls (deltaz) over time and writes the result to the file interwall_distance.dat. The averaging is done over 100 timesteps, once every 1 timestep, for 100 iterations.
+
+
+## Execution
+run 30000    # Runs the simulation for 30,000 timesteps.
+write_data system.data nocoeff    # Writes the final system configuration to a data file, excluding any potential or force coefficients.

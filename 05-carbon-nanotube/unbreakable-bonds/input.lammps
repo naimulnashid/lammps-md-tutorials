@@ -1,0 +1,105 @@
+## Variable Definitions
+variable T equal 300    # Defines a variable T with a value of 300, representing the temperature in Kelvin for the simulation.
+
+
+## Units and Atom Style
+units real    # Specifies the unit system as "real," where distances are in angstroms, time is in femtoseconds, and temperature is in Kelvin.
+atom_style molecular    # Specifies that atoms are part of molecular entities with bonds, angles, dihedrals, and impropers.
+
+
+## Boundary and Pair Styles
+boundary f f f    # Sets the boundary conditions to "fixed" in all three dimensions, meaning atoms cannot cross the simulation box boundaries.
+pair_style lj/cut 14    # Specifies that pairwise interactions are calculated using the Lennard-Jones potential with a cutoff distance of 14 angstroms.
+
+
+## Bond, Angle, Dihedral, and Improper Styles
+bond_style harmonic    # Bond interactions are modeled using a harmonic potential.
+angle_style harmonic    # Angle interactions are also modeled using a harmonic potential.
+dihedral_style opls    # Dihedral interactions are modeled using the OPLS (Optimized Potentials for Liquid Simulations) potential, which is widely used in molecular dynamics.
+improper_style harmonic    # Improper interactions are modeled using a harmonic potential.
+
+
+## Special Bonds Scaling
+special_bonds lj 0.0 0.0 0.5    # Specifies scaling factors for Lennard-Jones interactions between 1-2, 1-3, and 1-4 bonded atoms, respectively. Here, 1-2 and 1-3 interactions are excluded, and 1-4 interactions are scaled by 0.5.
+
+
+## Reading Data
+read_data cnt_molecular.data    # Reads atomic coordinates, molecular topology, and other data from the file cnt_molecular.data.
+
+
+# Including Parameters
+include parm.lammps    # Includes additional parameters or force field settings from the file parm.lammps.
+
+
+## Grouping and Displacement
+group carbon_atoms type 1    # Creates a group carbon_atoms consisting of atoms of type 1 (likely carbon atoms).
+variable carbon_xcm equal -1*xcm(carbon_atoms,x)
+variable carbon_ycm equal -1*xcm(carbon_atoms,y)
+variable carbon_zcm equal -1*xcm(carbon_atoms,z)    # Calculate the negative center of mass (COM) of the carbon atoms in the x, y, and z directions.
+displace_atoms carbon_atoms &
+    move ${carbon_xcm} ${carbon_ycm} ${carbon_zcm}    # Moves the entire group carbon_atoms so that their COM is at the origin (0,0,0).
+
+
+## Changing Box Dimensions
+change_box all x final -40 40 y final -40 40 z final -40 40    # Resizes the simulation box to extend from -40 to 40 angstroms in all three dimensions.
+
+
+## Defining Regions and Groups
+variable zmax equal bound(carbon_atoms,zmax)-0.5
+variable zmin equal bound(carbon_atoms,zmin)+0.5    # Defines the maximum (zmax) and minimum (zmin) z-coordinates of the carbon_atoms group with slight offsets (±0.5).
+region rtop block INF INF INF INF ${zmax} INF
+region rbot block INF INF INF INF INF ${zmin}
+region rmid block INF INF INF INF ${zmin} ${zmax}    # Defines three regions along the z-axis: rtop (top), rbot (bottom), and rmid (middle) based on the z-coordinates of the carbon atoms.
+
+group carbon_top region rtop
+group carbon_bot region rbot
+group carbon_mid region rmid    # Creates groups for carbon atoms in the rtop, rbot, and rmid regions.
+
+
+## Deleting Atoms
+variable zmax_del equal ${zmax}-2
+variable zmin_del equal ${zmin}+2    # Defines variables zmax_del and zmin_del slightly inside the top and bottom boundaries.
+region rdel block INF INF INF INF ${zmin_del} ${zmax_del}    # Defines a region rdel inside the carbon_mid region, closer to the carbon_top and carbon_bot regions.
+group rdel region rdel
+delete_atoms random fraction 0.02 no rdel NULL 482793 bond yes    # Deletes 2% of the atoms within the rdel region randomly, while preserving bonds.
+
+
+## Molecular Dynamics
+reset_atoms id sort yes    # Resets atom IDs and sorts them for efficient neighbor list calculations.
+velocity carbon_mid create ${T} 48455 mom yes rot yes    # Assigns initial velocities to atoms in the carbon_mid group according to a Maxwell-Boltzmann distribution at temperature T (300 K). The mom yes and rot yes options ensure the removal of any net linear momentum and angular momentum.
+fix mynve all nve    # Integrates the equations of motion using the NVE (constant Number, Volume, and Energy) ensemble for all atoms.
+compute Tmid carbon_mid temp    # Computes the temperature of the carbon_mid group.
+fix myber carbon_mid temp/berendsen ${T} ${T} 100    # Applies a Berendsen thermostat to the carbon_mid group to control the temperature at 300 K with a time constant of 100 timesteps.
+fix_modify myber temp Tmid    # Modifies the thermostat to use the Tmid temperature computed earlier.
+
+fix mysf1 carbon_top setforce 0 0 0
+fix mysf2 carbon_bot setforce 0 0 0    # Sets the forces on atoms in the carbon_top and carbon_bot groups to zero, effectively fixing these atoms in space.
+velocity carbon_top set 0 0 0
+velocity carbon_bot set 0 0 0    # Sets the velocities of atoms in the carbon_top and carbon_bot groups to zero, ensuring they do not move.
+
+
+## Data Extraction
+variable L equal xcm(carbon_top,z)-xcm(carbon_bot,z)    # Defines a variable L as the distance between the centers of mass of the carbon_top and carbon_bot groups in the z-direction, which could represent the length of the carbon nanotube.
+fix at1 all ave/time 10 10 100 v_L file output_cnt_length.dat    # Averages the value of L over time and writes it to output_cnt_length.dat every 100 timesteps.
+fix at2 all ave/time 10 10 100 f_mysf1[1] f_mysf2[1] &
+    file output_edge_force.dat    # Averages the x-components of the forces on the carbon_top and carbon_bot groups and writes them to output_edge_force.dat every 100 timesteps.
+
+dump mydmp all atom 1000 dump.lammpstrj    # Writes atom coordinates and velocities to the file dump.lammpstrj every 1000 timesteps for visualization.
+
+fix at3 all ave/time 10 10 100 c_Tmid &
+    file output_temperature_middle_group.dat    # Averages the temperature of the carbon_mid group (computed as Tmid) over time and writes it to output_temperature_middle_group.dat.
+
+
+## Thermodynamics and Running Simulation
+thermo 100    # Prints thermodynamic data (e.g., temperature, energy) to the screen every 100 timesteps.
+thermo_modify temp Tmid    # Specifies that the temperature used in thermodynamic output is the Tmid computed earlier.
+
+timestep 1.0    # Sets the timestep for the simulation to 1.0 femtoseconds.
+run 5000    # Runs the simulation for 5000 timesteps.
+
+
+## Imparting Velocity and Running Further  # 2*0.0005 A/fs = 0.001 A/fs = 100 m/s
+velocity carbon_top set 0 0 0.0005    # Sets a small velocity of 0.0005 Å/fs along the z-axis for the carbon_top group.
+velocity carbon_bot set 0 0 -0.0005    # Sets a small velocity of -0.0005 Å/fs along the z-axis for the carbon_bot group.
+
+run 10000    # Runs the simulation for an additional 10000 timesteps after the velocities have been set.

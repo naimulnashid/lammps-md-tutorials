@@ -1,0 +1,69 @@
+## This LAMMPS script sets up and runs a molecular dynamics (MD) simulation for a silicon oxide (SiO) system using the Vashishta potential. The script gradually cools down the system from 6000 K to 300 K and ends by saving the final structure. 
+
+
+## Simulation Initialization
+units metal    # Specifies the unit system as "metal," where distances are in angstroms, time is in picoseconds, energies are in eV, temperatures are in Kelvin, and masses are in atomic mass units (amu).
+boundary p p p    # Sets periodic boundary conditions in all three directions (x, y, z), meaning the simulation box is repeated infinitely in all directions.
+atom_style full    # Specifies that the atoms are part of molecules, which can include bonds, angles, dihedrals, and improper interactions. This style is useful when dealing with systems where molecular topology is important.
+
+
+## Pair Style and Neighbor Settings
+pair_style vashishta    # Uses the Vashishta potential, which is suitable for simulating covalent materials like SiO₂.
+neighbor 1.0 bin    # Sets the neighbor list skin distance to 1.0 angstroms, meaning that atoms within 1.0 angstroms beyond the pairwise cutoff will be included in the neighbor list.
+neigh_modify delay 1    # Updates the neighbor list every timestep to ensure accurate force calculations.
+
+
+## Reading and Replicating Data
+read_data SiO.data    # Reads the initial atomic configuration and molecular topology from the SiO.data file.
+replicate 6 6 6    # Replicates the atomic system 6 times in each direction (x, y, z), creating a larger simulation box with a 6x6x6 supercell.
+
+
+## Pair Coefficients
+pair_coeff * * ../Potential/SiO.1990.vashishta Si O    # Assigns the Vashishta potential parameters from the specified file (SiO.1990.vashishta) to the atom types defined in the system, with atom type 1 being Si and atom type 2 being O.
+
+
+## Dumping Atom Data
+dump dmp all atom 5000 dump.lammpstrj    # Outputs the atomic positions and other relevant data to the file dump.lammpstrj every 5000 timesteps. This file can be used for visualization of the atomic trajectories.
+
+
+## Defining Variables
+variable myvol equal vol    # Creates a variable myvol to store the current volume of the simulation box.
+variable mylx equal lx    # Creates a variable mylx to store the current length of the simulation box in the x-direction.
+variable myly equal ly    # Creates a variable myly to store the current length of the simulation box in the y-direction.
+variable mylz equal lz    # Creates a variable mylz to store the current length of the simulation box in the z-direction.
+variable mypot equal pe    # Creates a variable mypot to store the potential energy of the system.
+variable mytemp equal temp    # Creates a variable mytemp to store the current temperature of the system.
+
+
+## Averaging and Outputting Data
+fix myat1 all ave/time 10 100 1000 v_mytemp file temperature.dat    # Averages the temperature (v_mytemp) over every 1000 timesteps (10*100), and writes the results to temperature.dat every 1000 timesteps.
+fix myat2 all ave/time 10 100 1000 &
+    v_myvol v_mylx v_myly v_mylz file dimensions.dat    # Averages the volume and box dimensions (variables v_myvol, v_mylx, v_myly, v_mylz) over every 1000 timesteps and writes the results to dimensions.dat.
+fix myat3 all ave/time 10 100 1000 v_mypot file potential-energy.dat    # Averages the potential energy (v_mypot) over every 1000 timesteps and writes the results to potential-energy.dat.
+
+
+## Thermodynamic Output Settings
+thermo 1000    # Outputs thermodynamic data (e.g., temperature, pressure, energy) every 1000 timesteps.
+
+
+## Initial Velocity and NPT Equilibration
+velocity all create 6000 4928459 rot yes dist gaussian    # Initializes the velocities of all atoms to correspond to a temperature of 6000 K, with a random seed of 4928459. The rot yes option randomizes the rotational velocities, and dist gaussian applies a Gaussian distribution to the velocities.
+fix npt1 all npt temp 6000 6000 0.1 iso 100 100 1    # Applies an NPT ensemble to equilibrate the system at 6000 K and isotropic pressure (100 atm) with a temperature damping parameter of 0.1 ps and a pressure damping parameter of 1 ps.
+
+timestep 0.001    # Sets the simulation timestep to 0.001 picoseconds (1 femtosecond).
+run 50000    # Runs the simulation for 50,000 timesteps.
+
+
+## Cooling Down the System
+fix npt1 all npt temp 6000 4000 0.1 aniso 100 100 1    # Cools the system from 6000 K to 4000 K over 50,000 timesteps, using an anisotropic NPT ensemble with a temperature damping parameter of 0.1 ps and anisotropic pressure control with a target of 100 atm.
+run 50000    # Runs the simulation for 50,000 timesteps.
+
+fix npt1 all npt temp 4000 300 0.1 aniso 100 1 1    # Further cools the system from 4000 K to 300 K over 200,000 timesteps, with anisotropic pressure control (targeting 1 atm).
+run 200000    # Runs the simulation for 200,000 timesteps.
+
+fix npt1 all npt temp 300 300 0.1 aniso 1 1 1    # Equilibrates the system at 300 K and 1 atm for an additional 50,000 timesteps.
+run 50000    # Runs the simulation for 50,000 timesteps.
+
+
+## Writing the Final Data
+write_data amorphousSiO.data    # Writes the final atomic configuration and system information to the file amorphousSiO.data, which can be used for further analysis or future simulations.

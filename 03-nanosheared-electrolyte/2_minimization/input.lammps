@@ -1,0 +1,51 @@
+## Initialization
+boundary p p f    # Specifies periodic boundary conditions in the x and y directions (p) and a fixed boundary in the z direction (f). This setup allows atoms to move across the x and y boundaries but not the z boundary.
+units real    # Specifies the use of real units, where distances are in Ångströms, energies in kcal/mol, and time in femtoseconds.
+atom_style full    # Defines the atom style as "full," meaning that atoms can have bonds, angles, dihedrals, and charges.
+bond_style harmonic
+angle_style harmonic    # Sets the bond and angle potentials to harmonic, where the potential energy is proportional to the square of the deviation from the equilibrium bond length and angle.
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0    # Specifies the pair interaction style for Lennard-Jones and long-range Coulombic interactions, optimized for the TIP4P water model. The parameters control the TIP4P water model configuration and cutoff distances.
+kspace_style pppm/tip4p 1.0e-4    # Uses the Particle-Particle Particle-Mesh (PPPM) method for long-range Coulombic interactions with the TIP4P water model, using a precision of 1.0e-4.
+kspace_modify slab 3.0    # Modifies the k-space calculations to apply a slab correction with a spacing of 3.0 Å, accounting for the 2D periodic system and fixed boundary in the z-direction.
+
+
+## Reading and Including Data
+read_data ../1_systemcreation/system.data    # Reads atomic positions, topology, and other necessary information from the specified data file.
+
+include ../PARM.lammps    # Includes additional scripts for parameter definitions.
+include ../GROUP.lammps    # Includes additional scripts for group definitions.
+
+
+## Equilibration and Dynamics
+fix mynve fluid nve/limit 0.1    # Applies the NVE ensemble (constant number of atoms, volume, and energy) to the fluid group with a velocity limit of 0.1 Å/fs to control the rate of motion during initial equilibration.
+fix myber fluid temp/berendsen 1 1 100    # Applies a Berendsen thermostat to the fluid group to maintain the temperature at 1 K, with a relaxation time of 100 fs. This is an initial cooling stage.
+fix myshk H2O shake 1.0e-4 200 0 b 1 a 1    # Uses the SHAKE algorithm to constrain the bond lengths (b) and angles (a) of the water molecules in the H2O group, with a tolerance of 1.0e-4.
+
+timestep 0.5    # Sets the timestep for the integration to 0.5 femtoseconds.
+
+
+## Output and Monitoring
+dump mydmp all atom 1000 dump.lammpstrj    # Outputs the positions of all atoms every 1000 timesteps to a file (dump.lammpstrj) for later visualization.
+thermo 200    # Prints thermodynamic data (like temperature, energy) every 200 timesteps.
+
+
+## Initial Run
+run 4000    # Runs the simulation for 4000 timesteps with the current settings.
+
+
+## Temperature Adjustment and Further Simulation
+fix myber fluid temp/berendsen 300 300 100    # Adjusts the Berendsen thermostat to maintain the temperature of the fluid group at 300 K with a relaxation time of 100 fs. This stage heats the system to the desired temperature.
+timestep 1.0    # Increases the timestep to 1 femtosecond for the next stage of the simulation.
+
+run 4000    # Runs the simulation for another 4000 timesteps.
+
+
+## Final Dynamics and Data Output
+unfix mynve    # Unsets the previous nve/limit fix.
+fix mynve fluid nve    # Applies a standard NVE ensemble to the fluid group without velocity limiting, allowing the system to evolve freely under constant energy.
+
+run 4000    # Runs the simulation for another 4000 timesteps under the standard NVE ensemble.
+
+
+## Finalization
+write_data system.data nocoeff    # Writes the final system configuration to a data file, excluding any potential or force coefficients. This file can be used as input for future simulations.

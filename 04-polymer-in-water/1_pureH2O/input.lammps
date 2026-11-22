@@ -1,0 +1,57 @@
+# Preparing the water reservoir
+units real    # Specifies that the simulation uses the "real" units system, where distances are in angstroms, time is in femtoseconds, energies are in kcal/mol, etc. This unit system is typically used for molecular simulations.
+atom_style full    # Defines the style of atoms in the simulation, including full information on molecular topology (bonds, angles, dihedrals). This is necessary for simulations involving complex molecules like water.
+bond_style harmonic    # Defines the bond interactions using a harmonic potential.
+angle_style harmonic    # Defines the angle interactions using a harmonic potential.
+dihedral_style harmonic    # Defines the dihedral interactions using a harmonic potential.
+pair_style lj/cut/coul/long 10    # Specifies the pairwise interactions between atoms using a Lennard-Jones potential combined with Coulombic interactions. The cutoff for the Lennard-Jones potential is 10 angstroms, and the Coulomb interactions are treated with long-range methods.
+kspace_style pppm 1e-5    # Defines the method for calculating long-range Coulombic interactions using the Particle-Particle Particle-Mesh (PPPM) method with an accuracy of 1e-5.
+special_bonds lj 0.0 0.0 0.5 coul 0.0 0.0 1.0 angle yes    # Specifies scaling factors for Lennard-Jones and Coulomb interactions between atoms separated by 1-2, 1-3, and 1-4 bonds, respectively. Here, 1-2 and 1-3 interactions are excluded, and the 1-4 interactions are scaled by 0.5 for LJ and 1.0 for Coulomb. The angle yes indicates that angle contributions are included.
+
+region box block -45 45 -15 15 -15 15    # Defines a simulation box with boundaries from -45 to 45 angstroms in the x-direction, and -15 to 15 angstroms in the y- and z-directions.
+create_box 9 box &
+bond/types 7 &
+angle/types 8 &
+dihedral/types 4 &
+extra/bond/per/atom 3 &
+extra/angle/per/atom 6 &
+extra/dihedral/per/atom 10 &
+extra/special/per/atom 14
+# Creates a simulation box that can accommodate 9 atom types.
+# Specifies the maximum number of bond, angle, and dihedral types that will be used in the simulation.
+# Allocates extra space for bonds, angles, dihedrals, and special interactions per atom. This is often used when the number of these interactions is not known in advance.
+
+include ../PARM.lammps    # Includes additional parameters from an external file PARM.lammps. This file likely contains force field parameters or other necessary settings.
+
+molecule h2omol H2O-SPCFw.mol    # Defines a water molecule using a molecular template from the H2O-SPCFw.mol file, which contains the topology and atom coordinates for the SPC/Fw water model.
+create_atoms 0 random 1050 87910 NULL mol &
+    h2omol 454756 overlap 1.0 maxtry 50    # Randomly creates 1050 water molecules (based on the template h2omol) within the simulation box. The overlap 1.0 option ensures that molecules are not placed closer than 1.0 angstrom from each other. maxtry 50 specifies the maximum number of attempts for placing a molecule before moving on.
+
+group H2O type 8 9    # Groups atoms of types 8 and 9 (likely oxygen and hydrogen atoms) into a group called H2O.
+
+minimize 1.0e-4 1.0e-6 100 1000    # Minimizes the system's energy by adjusting atomic positions. The minimization stops when the energy change is less than 1.0e-4 kcal/mol, the force on each atom is less than 1.0e-6 kcal/mol/Å, or after 100 iterations with a maximum of 1000 iterations.
+
+reset_timestep 0    # Resets the simulation's timestep counter to 0.
+
+fix mynpt all npt temp 300 300 100 iso 1 1 1000    # Applies a Nose-Hoover thermostat and barostat to control the temperature and pressure of the system. The temperature is maintained at 300 K with a relaxation time of 100 timesteps, and the pressure is controlled isotropically at 1 atm with a relaxation time of 1000 timesteps.
+
+dump mydmp all atom 1000 dump.lammpstrj    # Outputs atomic positions to a file named dump.lammpstrj every 1000 timesteps.
+
+variable mytemp equal temp    # Defines a variable mytemp equal to the system's temperature.
+variable myvol equal vol    # Defines a variable myvol equal to the system's volume.
+
+fix myat1 all ave/time 10 10 100 v_mytemp file temperature.dat    # Averages the temperature (v_mytemp) over time and writes the results to temperature.dat every 100 timesteps.
+fix myat2 all ave/time 10 10 100 v_myvol file volume.dat    # Averages the volume (v_myvol) over time and writes the results to volume.dat every 100 timesteps.
+
+variable myoxy equal count(H2O)/3    # Defines a variable myoxy equal to one-third of the total number of atoms in the H2O group, which corresponds to the number of water molecules.
+variable mydensity equal ${myoxy}/v_myvol    # Defines a variable mydensity equal to the number of water molecules per unit volume, which represents the density of water in the system.
+
+fix myat3 all ave/time 10 10 100 v_mydensity file density.dat    # Averages the density (v_mydensity) over time and writes the results to density.dat every 100 timesteps.
+thermo 1000    # Outputs thermodynamic information (e.g., temperature, pressure, energy) to the screen every 1000 timesteps.
+
+timestep 1.0    # Sets the simulation timestep to 1.0 femtoseconds.
+run 20000    # Runs the simulation for 20,000 timesteps (equivalent to 20 ps).
+
+write_data H2O.data    # Writes the final configuration of the system, including atom positions, velocities, and topology, to a file named H2O.data.
+
+## This script sets up, equilibrates, and monitors a simulation of water molecules within a defined region, using the SPC/Fw water model with specified interaction potentials.

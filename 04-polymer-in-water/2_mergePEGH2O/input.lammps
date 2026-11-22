@@ -1,0 +1,60 @@
+## System Initialization
+units real    # Specifies that the simulation uses real units (e.g., distance in Ångströms, energy in kcal/mol, time in femtoseconds).
+atom_style full    # Specifies that the atoms can have bonds, angles, dihedrals, and charges.
+bond_style harmonic
+angle_style harmonic
+dihedral_style harmonic    # Specifies that the interactions between bonded atoms (bonds, angles, and dihedrals) are modeled using harmonic potentials.
+pair_style lj/cut/coul/long 10    # Defines the Lennard-Jones (LJ) potential with a cutoff of 10 Å and long-range Coulombic interactions.
+kspace_style pppm 1e-5    # Uses the Particle-Particle Particle-Mesh (PPPM) method to compute long-range Coulombic interactions with a tolerance of 1e-5.
+special_bonds lj 0.0 0.0 0.5 coul 0.0 0.0 1.0 angle yes dihedral yes    # Modifies how nonbonded interactions are calculated for atoms connected by bonds, angles, or dihedrals. Here, the LJ interaction is scaled by 0.5 for 1-4 interactions (atoms separated by three bonds), while Coulombic interactions are fully included
+
+
+## System Setup
+read_data ../1_pureH2O/H2O.data &
+    extra/bond/per/atom 3 &
+    extra/angle/per/atom 6 &
+    extra/dihedral/per/atom 10 &
+    extra/special/per/atom 14
+# Reads the initial system configuration from a data file, H2O.data, which contains pure water.
+# Allocates additional space for bonds, angles, dihedrals, and special neighbors per atom to accommodate the insertion of the PEG molecule.
+
+include ../PARM.lammps    # Includes a file that defines force field parameters and other settings, such as atom types and interaction coefficients.
+
+
+## Adding the PEG Molecule
+molecule pegmol PEG-GROMOS.mol    # Loads the PEG molecule structure from the file PEG-GROMOS.mol.
+create_atoms 0 single 0 0 0 mol pegmol 454756    # Places the PEG molecule at the origin (0, 0, 0) in the simulation box using a random seed (454756) to generate atom positions.
+
+
+## Grouping Atoms
+group H2O type 8 9    # Groups atoms of types 8 and 9, which likely correspond to the oxygen and hydrogen atoms of water, into a group named H2O.
+group PEG type 1 2 3 4 5 6 7    # Groups atoms of types 1 through 7, which correspond to different atoms in the PEG molecule, into a group named PEG.
+
+
+## Overlap Removal
+delete_atoms overlap 2.0 H2O PEG mol yes    # Deletes water molecules (H2O group) that overlap with the PEG molecule (PEG group) by more than 2.0 Å to avoid unrealistic atomic overlaps. The mol yes option ensures that entire water molecules are deleted if any part of the molecule overlaps.
+
+
+## Running the Simulation
+fix mynpt all npt temp 300 300 100 x 1 1 1000    # Applies an NPT ensemble (constant number of atoms, pressure, and temperature) to the entire system, maintaining the temperature at 300 K and the pressure at 1 atm with a damping parameter of 100 fs for temperature and 1000 fs for pressure in the x direction.
+timestep 1.0    # Sets the simulation timestep to 1.0 fs.
+
+
+## Output Settings
+dump mydmp all atom 100 dump.lammpstrj    # Outputs the atomic configuration of the entire system every 100 timesteps to a dump file (dump.lammpstrj) for visualization.
+thermo 100    # Prints thermodynamic information (e.g., temperature, energy) to the screen and log file every 100 timesteps.
+
+
+## Monitoring and Data Collection
+variable mytemp equal temp    # Defines a variable mytemp that tracks the system's temperature.
+variable myvol equal vol    # Defines a variable myvol that tracks the system's volume.
+fix myat1 all ave/time 10 10 100 v_mytemp file temperature.dat    # Averages the temperature (v_mytemp) every 10 timesteps over 100 timesteps and writes the results to temperature.dat.
+fix myat2 all ave/time 10 10 100 v_myvol file volume.dat    # Averages the volume (v_myvol) every 10 timesteps over 100 timesteps and writes the results to volume.dat.
+
+variable myenthalpy equal enthalpy    # Defines a variable myenthalpy that tracks the system's enthalpy.
+fix myat3 all ave/time 10 10 100 v_myenthalpy file enthalpy.dat    # verages the enthalpy (v_myenthalpy) every 10 timesteps over 100 timesteps and writes the results to enthalpy.dat.
+
+
+## Final Run and Data Output
+run 30000    # Runs the simulation for 30,000 timesteps.
+write_data mix.data    # Saves the final system configuration, including positions, velocities, bonds, angles, and dihedrals, to a data file (mix.data).

@@ -1,0 +1,80 @@
+## This LAMMPS script sets up and runs a molecular dynamics (MD) simulation of a silica (SiO₂) system using the ReaxFF reactive force field.
+
+
+## Units and Atom Style
+units real    # Specifies the unit system as "real," where distances are in angstroms, time is in femtoseconds, energies are in kcal/mol, temperatures are in Kelvin, and charges are in elementary charge units.
+atom_style full    # Specifies that the atoms are part of molecules, meaning they can have bonds, angles, dihedrals, and improper interactions. This style is commonly used for molecular simulations.
+
+
+## Reading Initial Data
+read_data silica.data    # Reads the atomic coordinates, molecular topology, and other relevant data from the silica.data file, which contains information about the initial configuration of the silica system.
+
+
+## Setting Atomic Masses
+mass 1 28.0855    # Assigns a mass of 28.0855 amu (atomic mass units) to atom type 1, representing silicon (Si).
+mass 2 15.999    # Assigns a mass of 15.999 amu to atom type 2, representing oxygen (O).
+
+
+## Pair Style and Coefficients
+pair_style reaxff NULL safezone 3.0 mincap 150
+# Sets the pairwise interaction style to ReaxFF, which is a reactive force field that can simulate chemical reactions.
+    # NULL: No cutoffs are used for pair interactions.
+    # safezone 3.0: Allocates additional buffer space around the simulation box to handle large displacements during reactions.
+    # mincap 150: Sets a minimum cap for the size of the ReaxFF neighbor list to 150 atoms.
+pair_coeff * * reaxCHOFe.ff Si O    # Specifies the ReaxFF force field parameters from the reaxCHOFe.ff file, with the atoms identified as Si and O according to their order in the force field file.
+fix myqeq all qeq/reaxff 1 0.0 10.0 1.0e-6 reaxff maxiter 400
+# pplies a charge equilibration (QEq) method specific to ReaxFF.
+    # 1: Applies this fix to all atoms.
+    # 0.0: Target timestep for equilibration.
+    # 10.0: Tolerance for charge equilibration.
+    # 1.0e-6: Convergence criterion for charge equilibration.
+    # reaxff: Specifies that ReaxFF parameters should be used.
+    # maxiter 400: Limits the number of iterations for the QEq method to 400.
+
+
+## Grouping Atoms and Calculating Average Charges
+group grpSi type 1    # Creates a group grpSi containing all atoms of type 1 (Si).
+group grpO type 2    # Creates a group grpO containing all atoms of type 2 (O).
+variable qSi equal charge(grpSi)/count(grpSi)    # Defines a variable qSi to calculate the average charge on silicon atoms by dividing the total charge of the group grpSi by the number of atoms in the group.
+variable qO equal charge(grpO)/count(grpO)    # Defines a variable qO to calculate the average charge on oxygen atoms similarly.
+
+
+## Thermodynamic Output
+thermo 50    # Outputs thermodynamic data every 50 timesteps.
+thermo_style custom step temp etotal press vol v_qSi v_qO
+# Customizes the thermodynamic output to include:
+    # step: Current timestep.
+    # temp: System temperature.
+    # etotal: Total energy of the system.
+    # press: System pressure.
+    # vol: Volume of the simulation box.
+    # v_qSi: Average charge on Si atoms.
+    # v_qO: Average charge on O atoms.
+dump dmp all custom 100 dump.lammpstrj id type q x y z    # Dumps the atomic coordinates, atom type, and charge to the file dump.lammpstrj every 100 timesteps, which can be used for visualization.
+
+
+## ReaxFF Species Analysis
+fix myspec all reaxff/species 5 1 5 species.log element Si O
+# Logs the species (molecular entities) formed during the simulation.
+    # 5: Updates the species information every 5 timesteps.
+    # 1: Minimum bond order for defining a bond.
+    # 5: Maximum number of atom types included in species identification.
+    # species.log: Output file where species information is logged.
+    # element Si O: Specifies the elements present in the system.
+
+
+## Velocity Initialization and Simulation Setup
+velocity all create 300.0 3482028    # Initializes the velocities of all atoms to correspond to a temperature of 300 K, with a random seed of 3482028 for reproducibility.
+fix mynpt all npt temp 300.0 300.0 100 aniso 1.0 1.0 1000
+# Applies the NPT (constant Number, Pressure, Temperature) ensemble to equilibrate the system at 300 K with an anisotropic (different pressures along different axes) barostat.
+    # 100: Damping parameter for temperature control (in timesteps).
+    # aniso 1.0 1.0 1000: Specifies an anisotropic pressure control with target pressures of 1 atm along all axes and a damping parameter of 1000 timesteps.
+
+
+## Running the Simulation
+timestep 0.5    # Sets the timestep for the simulation to 0.5 femtoseconds.
+run 5000    # Runs the simulation for 5000 timesteps, allowing the system to equilibrate under the specified conditions.
+
+
+## Writing the Final Data
+write_data silica-relaxed.data    # Saves the final configuration of the system, including atomic positions, velocities, and other relevant data, to the file silica-relaxed.data. This file can be used as input for future simulations.

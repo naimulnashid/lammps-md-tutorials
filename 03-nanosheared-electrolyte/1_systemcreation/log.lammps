@@ -1,0 +1,182 @@
+LAMMPS (27 Jun 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Loaded 1 plugins from C:\Users\<user>\AppData\Local\LAMMPS 64-bit 27Jun2024-MSMPI\plugins
+# System generation
+boundary p p f
+units real
+atom_style full
+bond_style harmonic
+angle_style harmonic
+pair_style lj/cut/tip4p/long 1 2 1 1 0.1546 12.0
+kspace_style pppm/tip4p 1.0e-4
+kspace_modify slab 3.0
+
+lattice fcc 4.04
+Lattice spacing in x,y,z = 4.04 4.04 4.04
+region box block -3 3 -3 3 -5 5
+create_box 5 box bond/types 1 angle/types 1 extra/bond/per/atom 2 extra/angle/per/atom 1 extra/special/per/atom 2
+Created orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  1 by 2 by 2 MPI processor grid
+
+region rbotwall block -3 3 -3 3 -4 -3
+region rtopwall block -3 3 -3 3 3 4
+region rwall union 2 rbotwall rtopwall
+create_atoms 5 region rwall
+Created 432 atoms
+  using lattice units in orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  create_atoms CPU = 0.011 seconds
+
+region rliquid block INF INF INF INF -2 2
+molecule h2omol RigidH2O.txt
+Read molecule template h2omol:
+# Water molecule.
+  1 molecules
+  0 fragments
+  3 atoms with max type 2
+  2 bonds with max type 1
+  1 angles with max type 1
+  0 dihedrals with max type 0
+  0 impropers with max type 0
+create_atoms 0 region rliquid mol h2omol 482793
+Created 1944 atoms
+  using lattice units in orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  create_atoms CPU = 0.002 seconds
+
+create_atoms 3 random 15 52802 rliquid overlap 0.3 maxtry 500
+Created 15 atoms
+  using lattice units in orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  create_atoms CPU = 0.001 seconds
+create_atoms 4 random 15 90182 rliquid overlap 0.3 maxtry 500
+Created 15 atoms
+  using lattice units in orthogonal box = (-12.12 -12.12 -20.2) to (12.12 12.12 20.2)
+  create_atoms CPU = 0.000 seconds
+set type 3 charge 1
+Setting atom values ...
+  15 settings made for charge
+set type 4 charge -1
+Setting atom values ...
+  15 settings made for charge
+
+include ../PARM.lammps
+mass 1 15.9994 # water
+mass 2 1.008 # water
+mass 3 28.990 # ion
+mass 4 35.453 # ion
+mass 5 26.9815 # wall
+
+pair_coeff 1 1 0.185199 3.1589 # water
+pair_coeff 2 2 0.0 1.0 # water
+pair_coeff 3 3 0.04690 2.4299 # ion
+pair_coeff 4 4 0.1500 4.04470 # ion
+pair_coeff 5 5 11.697 2.574 # wall
+pair_coeff 1 5 0.4 2.86645 # water-wall
+
+bond_coeff 1 0 0.9572 # water
+
+angle_coeff 1 0 104.52 # water
+include ../GROUP.lammps
+group H2O type 1 2
+1944 atoms in group H2O
+group Na type 3
+15 atoms in group Na
+group Cl type 4
+15 atoms in group Cl
+group ions union Na Cl
+30 atoms in group ions
+group fluid union H2O ions
+1974 atoms in group fluid
+
+group wall type 5
+432 atoms in group wall
+region rtop block INF INF INF INF 0 INF
+region rbot block INF INF INF INF INF 0
+group top region rtop
+1203 atoms in group top
+group bot region rbot
+1203 atoms in group bot
+group walltop intersect wall top
+216 atoms in group walltop
+group wallbot intersect wall bot
+216 atoms in group wallbot
+
+delete_atoms random fraction 0.15 yes H2O NULL 482793 mol yes
+WARNING: Ignoring 'compress yes' for molecular system (src/delete_atoms.cpp:141)
+Deleted 741 atoms, new total = 1665
+Deleted 494 bonds, new total = 802
+Deleted 247 angles, new total = 401
+
+run 0
+WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
+PPPM initialization ...
+  extracting TIP4P info from pair style
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.22477066
+  grid = 12 12 40
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.023142321
+  estimated relative force accuracy = 6.9692414e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 8892 2376
+WARNING: Communication cutoff 0 is shorter than a bond length based estimate of 3.4358. This may lead to errors. (src/comm.cpp:730)
+WARNING: Increasing communication cutoff to 15.1118 for TIP4P pair style (src/KSPACE/pair_lj_cut_tip4p_long.cpp:478)
+Generated 9 of 10 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 14.3092
+  ghost atom cutoff = 15.1118
+  binsize = 7.1546, bins = 4 4 6
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut/tip4p/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 8.858 | 8.881 | 8.903 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   0              601327.65      0              601327.65      7329027.8    
+Loop time of 1e-06 on 4 procs for 0 steps with 1665 atoms
+
+0.0% CPU use with 4 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Bond    | 0          | 0          | 0          |   0.0 |  0.00
+Kspace  | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 1e-06      |            |       |100.00
+
+Nlocal:         416.25 ave         447 max         381 min
+Histogram: 1 0 0 0 1 0 0 1 0 1
+Nghost:        5779.25 ave        5870 max        5693 min
+Histogram: 1 1 0 0 0 0 0 0 1 1
+Neighs:         203998 ave      262573 max      161163 min
+Histogram: 2 0 0 0 0 0 1 0 0 1
+
+Total # of neighbors = 815992
+Ave neighs/atom = 490.08529
+Ave special neighs/atom = 1.445045
+Neighbor list builds = 0
+Dangerous builds = 0
+
+write_data system.data nocoeff
+System init for write_data ...
+PPPM initialization ...
+  extracting TIP4P info from pair style
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.22477066
+  grid = 12 12 40
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.023142321
+  estimated relative force accuracy = 6.9692414e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 8892 2376
+Generated 9 of 10 mixed pair_coeff terms from geometric mixing rule
+write_dump all atom dump.lammpstrj
+Total wall time: 0:00:00

@@ -1,0 +1,259 @@
+LAMMPS (27 Jun 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Loaded 1 plugins from C:\Users\<user>\AppData\Local\LAMMPS 64-bit 27Jun2024-MSMPI\plugins
+# Preparing the water reservoir
+units real
+atom_style full
+bond_style harmonic
+angle_style harmonic
+dihedral_style harmonic
+pair_style lj/cut/coul/long 10
+kspace_style pppm 1e-5
+special_bonds lj 0.0 0.0 0.5 coul 0.0 0.0 1.0 angle yes
+
+region box block -45 45 -15 15 -15 15
+create_box 9 box bond/types 7 angle/types 8 dihedral/types 4 extra/bond/per/atom 3 extra/angle/per/atom 6 extra/dihedral/per/atom 10 extra/special/per/atom 14
+Created orthogonal box = (-45 -15 -15) to (45 15 15)
+  4 by 1 by 1 MPI processor grid
+
+include ../PARM.lammps
+# LAMMPS input script by Simon Gravelle
+# This input is part of a tutorial from https://lammpstutorials.github.io
+# Last tested using the 2Aug2023 stable LAMMPS version
+# This file was released under the GNU general public license v3.0
+
+# ⣿⣿⡆⠀⠀⠀⠀⠀⠀⣾⣿⣿⣆⠀⠀⠀⣿⣿⣿⣆⠀⠀⣰⣿⣿⣷⠀⢸⣿⣿⣷⡀⠀⢀⣾⣿⣿⠀⠀⣿⣿⣿⣿⣿⣷⣆⠀⢀⣶⣿⠿⠿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣠⣤⣶⣿⣿⣿⣦⡄⠀⠀⠀⠀⠀⠀⠀
+# ⣿⣿⡇⠀⠀⠀⠀⠀⣼⣿⡏⣿⣿⡄⠀⠀⣿⣿⡿⣿⡆⢰⣿⢿⣿⣿⠀⢸⣿⣿⢿⣧⠀⣾⡿⣿⣿⠀⠀⣿⣿⡇⠀⢈⣿⣿⠀⢸⣿⣧⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣾⣿⣿⠏⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀
+# ⣿⣿⡇⠀⠀⠀⠀⢰⣿⣿⣀⣸⣿⣷⡀⠀⣿⣿⡇⢻⣿⣿⡏⢸⣿⣿⠀⢸⣿⣿⠘⣿⣿⡿⠁⣿⣿⠀⠀⣿⣿⡿⠿⠿⠿⠋⠀⠀⠉⠛⠻⠿⣿⣷⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⡄⠻⣿⣿⣿⣿⡿⠟⣃⠀⠀⠀⠀⠀⠀
+# ⣿⣿⣧⣤⣤⣤⢠⣿⣿⠛⠛⠛⢻⣿⣧⠀⣿⣿⡇⠀⠛⠛⠀⢸⣿⣿⠀⢸⣿⣿⠀⠘⠛⠃⠀⣿⣿⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⢰⣶⣤⣤⣤⣿⡿⠀⠀⠀⠀⠀⣻⣿⣿⣿⣿⣿⣿⣄⡀⠉⠉⠁⠀⢠⣿⡄⠀⠀⠀⠀⠀
+# ⠉⠉⠉⠉⠉⠉⠈⠉⠁⠀⠀⠀⠀⠉⠉⠀⠉⠉⠁⠀⠀⠀⠀⠈⠉⠉⠀⠈⠉⠉⠀⠀⠀⠀⠀⠉⠉⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣾⣿⣿⡇⠀⠀⠀⠀⠀
+# ⢀⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣶⠀⠀⠀⠀⠀⠀⠀⠀⢰⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡃⠀⠀⠀⠀⠀
+# ⣼⣿⣴⡦⠀⣴⠀⠀⠀⣴⡄⢤⣿⣧⣶⠄⢀⣤⡶⣶⣄⠀⠀⣴⣤⣴⣦⢠⣦⠀⠀⣤⠶⢶⣤⡀⠀⢸⡇⠀⢠⣴⠶⢦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⠀⠀⠀
+# ⢸⣿⠀⠀⠀⣿⠀⠀⠀⣿⡇⠀⣿⡆⠀⠀⣿⠇⠀⠀⢻⡇⠀⣿⡇⠀⠀⢸⣿⠀⠀⣠⣤⣤⣽⡇⠀⢸⡇⠀⢻⣧⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⡀⠀
+# ⠸⣿⠀⠀⠀⣿⡄⠀⢀⣿⡇⠀⣿⡇⠀⠀⢿⣇⠀⢀⣼⡇⠀⣿⡇⠀⠀⢸⣿⠀⢸⣏⠀⠀⣼⡇⠀⢸⡇⠀⡀⠀⠉⢹⣷⠀⠀⠀⠀⠀⠀⠀⣀⣴⣾⣿⣿⡟⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀
+# ⠀⠙⠛⠛⠀⠈⠛⠛⠋⠛⠁⠀⠈⠛⠛⠃⠈⠛⠛⠛⠋⠀⠀⠛⠃⠀⠀⠘⠛⠀⠈⠛⠛⠛⠙⠃⠀⠘⠃⠀⠙⠛⠛⠛⠁⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⣿⣿⡀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+#⠀ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡘⣿⣿⣿⣿⣿⡏⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠨⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡈⠻⣿⣿⣿⣇⠸⣿⣿⣿⣿⣿⣿⡿⢻⣿⣿⠿⠋⠁⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠈⠻⢿⣿⣦⣈⠙⠛⠛⠛⣁⣴⡿⠛⠁⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠈⠉⠛⠛⠓⠚⠋⠉⠁⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⣿⣿⣿⣿⡿⠟⠋⠀
+
+mass 1 15.9994 # PEG O (GROMOS 54A7)
+mass 2 12.011 # PEG C (GROMOS 54A7)
+mass 3 1.008 # PEG H (GROMOS 54A7)
+mass 4 1.008 # PEG H (GROMOS 54A7)
+mass 5 12.011 # PEG C (GROMOS 54A7)
+mass 6 15.9994 # PEG O (GROMOS 54A7)
+mass 7 15.9994 # PEG O (GROMOS 54A7)
+mass 8 15.9994 # H2O O (SPC/Fw)
+mass 9 1.008 # H2O H (SPC/Fw)
+
+pair_coeff 1 1 0.2526 2.8492 # PEG O (GROMOS 54A7)
+pair_coeff 2 2 0.0663 3.5812 # PEG C (GROMOS 54A7)
+pair_coeff 3 3 0.0283 2.3734 # PEG H (GROMOS 54A7)
+pair_coeff 4 4 0.0 0.0 # PEG H (GROMOS 54A7)
+pair_coeff 5 5 0.2450 2.8114 # PEG C (GROMOS 54A7)
+pair_coeff 6 6 0.1195 3.1000 # PEG O (GROMOS 54A7)
+pair_coeff 7 7 0.1195 3.1000 # PEG O (GROMOS 54A7)
+pair_coeff 8 8 0.155 3.165  # H2O O (SPC/Fw)
+pair_coeff 9 9 0.0 0.0 # H2O H (SPC/Fw)
+
+bond_coeff 1 1109.2926 1.12
+bond_coeff 2 399.7916 1.43
+bond_coeff 3 299.8440 1.52
+bond_coeff 4 400.0343 1.53
+bond_coeff 5 310.7075 1.41
+bond_coeff 6 179.2543 0.971
+bond_coeff 7 529.581 1.012 # H2O O-H (SPC/Fw)
+
+angle_coeff 1 47.6940 109.5
+angle_coeff 2 55.1271 109.5
+angle_coeff 3 47.6350 109.6
+angle_coeff 4 55.1139 111.0
+angle_coeff 5 54.9931 110.3
+angle_coeff 6 180.4602 109.0
+angle_coeff 7 30.1731 110.0
+angle_coeff 8 37.95 113.24 # H2O H-O-H (SPC/Fw)
+
+dihedral_coeff 1 0.3011 1 3
+dihedral_coeff 2 1.4149 1 3
+dihedral_coeff 3 0.2390 -1 3
+dihedral_coeff 4 0.0 1 1
+
+molecule h2omol H2O-SPCFw.mol
+Read molecule template h2omol:
+# LAMMPS input script by Simon Gravelle
+  1 molecules
+  0 fragments
+  3 atoms with max type 9
+  2 bonds with max type 7
+  1 angles with max type 8
+  0 dihedrals with max type 0
+  0 impropers with max type 0
+create_atoms 0 random 1050 87910 NULL mol     h2omol 454756 overlap 1.0 maxtry 50
+Created 3150 atoms
+  using lattice units in orthogonal box = (-45 -15 -15) to (45 15 15)
+  create_atoms CPU = 0.015 seconds
+
+group H2O type 8 9
+3150 atoms in group H2O
+minimize 1.0e-4 1.0e-6 100 1000
+PPPM initialization ...
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.29351425
+  grid = 60 24 24
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.0035707601
+  estimated relative force accuracy = 1.0753238e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 21142 8640
+Generated 36 of 36 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 12
+  ghost atom cutoff = 12
+  binsize = 6, bins = 15 5 5
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut/coul/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 15.61 | 15.62 | 15.62 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   0              1439565.1      0.20232966     1439565.3      4888422.7    
+       100   0             -9396.0738      616.55865     -8779.5152     -2246.8097    
+Loop time of 0.407704 on 4 procs for 100 steps with 3150 atoms
+
+18.2% CPU use with 4 MPI tasks x 1 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = max iterations
+  Energy initial, next-to-last, final = 
+      1439565.25281314  -8767.57431080891  -8779.51516343702
+  Force two-norm initial, final = 8728133.5 139.9185
+  Force max component initial, final = 3985438.8 19.682354
+  Final line search alpha, max atom move = 0.0037971342 0.07473654
+  Iterations, force evaluations = 100 159
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.19743    | 0.20517    | 0.21841    |   1.8 | 50.32
+Bond    | 0.001818   | 0.0018817  | 0.002004   |   0.2 |  0.46
+Kspace  | 0.16851    | 0.18184    | 0.18949    |   1.9 | 44.60
+Neigh   | 0.009529   | 0.0095357  | 0.009543   |   0.0 |  2.34
+Comm    | 0.005539   | 0.0056133  | 0.00574    |   0.1 |  1.38
+Output  | 3.8e-05    | 3.875e-05  | 4e-05      |   0.0 |  0.01
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.003617   |            |       |  0.89
+
+Nlocal:          787.5 ave         839 max         766 min
+Histogram: 2 1 0 0 0 0 0 0 0 1
+Nghost:        4529.25 ave        4574 max        4472 min
+Histogram: 1 0 0 1 0 0 0 0 0 2
+Neighs:         111134 ave      120499 max      106107 min
+Histogram: 1 1 1 0 0 0 0 0 0 1
+
+Total # of neighbors = 444535
+Ave neighs/atom = 141.12222
+Ave special neighs/atom = 2
+Neighbor list builds = 5
+Dangerous builds = 0
+reset_timestep 0
+
+fix mynpt all npt temp 300 300 100 iso 1 1 1000
+
+dump mydmp all atom 1000 dump.lammpstrj
+variable mytemp equal temp
+variable myvol equal vol
+fix myat1 all ave/time 10 10 100 v_mytemp file temperature.dat
+fix myat2 all ave/time 10 10 100 v_myvol file volume.dat
+variable myoxy equal count(H2O)/3
+variable mydensity equal ${myoxy}/v_myvol
+variable mydensity equal 1050/v_myvol
+fix myat3 all ave/time 10 10 100 v_mydensity file density.dat
+thermo 1000
+
+timestep 1.0
+run 20000
+PPPM initialization ...
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.29351425
+  grid = 60 24 24
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.0035707601
+  estimated relative force accuracy = 1.0753238e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 21142 8640
+Generated 36 of 36 mixed pair_coeff terms from geometric mixing rule
+Per MPI rank memory allocation (min/avg/max) = 14.49 | 14.49 | 14.49 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press          Volume    
+         0   0             -9396.0738      616.55865     -8779.5152     -2246.8097      81000        
+      1000   301.14349     -8907.1923      817.93429     -5262.5534     -415.47364      69801.513    
+      2000   294.87883     -9542.7964      1009.1863     -5765.7091     -464.06981      62221.716    
+      3000   302.17361     -10023.107      1092.5998     -6094.1329     -292.53618      56243.626    
+      4000   303.06719     -10284.442      1106.664      -6333.0167     -485.1269       51068.133    
+      5000   306.12242     -10464.19       1100.0917     -6490.658       91.129308      47262.158    
+      6000   298.61237     -10532.494      1133.556      -6595.9923     -601.09081      43950.14     
+      7000   305.68174     -10696.636      1180.8753     -6646.457      -950.94836      41170.667    
+      8000   292.36974     -10761.551      1156.7436     -6860.458       215.96874      38714.89     
+      9000   294.62551     -10837.822      1137.264      -6935.0346      310.34029      37684.463    
+     10000   294.95602     -10927.901      1213.871      -6945.4049      76.82169       36283.172    
+     11000   303.65616     -11021.736      1138.6583     -7032.7879     -303.80642      35257.859    
+     12000   299.20551     -10915.196      1164.4321     -6942.25        710.71441      34892.85     
+     13000   301.34403     -11037.628      1178.7614     -7030.2799     -162.81832      33362.378    
+     14000   299.21551     -11171.931      1147.7172     -7215.6061     -445.55618      32923.62     
+     15000   301.71678     -11010.995      1222.2738     -6956.6355      447.8336       33126.908    
+     16000   291.1421      -11076.437      1188.8064     -7154.8047      451.54157      33174.126    
+     17000   300.1391      -11164.018      1217.1096     -7129.632      -59.974192      33234.332    
+     18000   307.48584     -11135.942      1222.9271     -7026.7771      626.9487       33656.855    
+     19000   302.1667      -11116.018      1147.0795     -7132.6297     -463.40781      33401.224    
+     20000   295.78707     -11329.645      1231.1833     -7322.0352      98.51638       32806.445    
+Loop time of 193.698 on 4 procs for 20000 steps with 3150 atoms
+
+Performance: 8.921 ns/day, 2.690 hours/ns, 103.253 timesteps/s, 325.248 katom-step/s
+12.3% CPU use with 4 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 44.099     | 49.237     | 52.767     |  51.3 | 25.42
+Bond    | 0.42306    | 0.47092    | 0.5118     |   4.7 |  0.24
+Kspace  | 45.368     | 48.889     | 54.058     |  51.9 | 25.24
+Neigh   | 6.9592     | 6.9647     | 6.9707     |   0.2 |  3.60
+Comm    | 2.204      | 2.2328     | 2.2649     |   1.7 |  1.15
+Output  | 0.024482   | 0.026211   | 0.027371   |   0.7 |  0.01
+Modify  | 65.221     | 67.471     | 68.481     |  16.0 | 34.83
+Other   |            | 18.41      |            |       |  9.50
+
+Nlocal:          787.5 ave         813 max         768 min
+Histogram: 1 0 1 0 1 0 0 0 0 1
+Nghost:         7574.5 ave        7631 max        7532 min
+Histogram: 1 0 1 0 1 0 0 0 0 1
+Neighs:         273252 ave      286917 max      262773 min
+Histogram: 1 0 1 0 1 0 0 0 0 1
+
+Total # of neighbors = 1093007
+Ave neighs/atom = 346.98635
+Ave special neighs/atom = 2
+Neighbor list builds = 1140
+Dangerous builds = 0
+
+write_data H2O.data
+System init for write_data ...
+PPPM initialization ...
+  using 12-bit tables for long-range coulomb (src/kspace.cpp:342)
+  G vector (1/distance) = 0.30026207
+  grid = 45 20 20
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.0037587427
+  estimated relative force accuracy = 1.1319342e-05
+  using double precision FFTW3
+  3d grid and FFT values/proc = 13122 4800
+Generated 36 of 36 mixed pair_coeff terms from geometric mixing rule
+Total wall time: 0:03:14

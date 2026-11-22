@@ -1,0 +1,66 @@
+## INITIALIZATION
+units metal    # Sets the units system for the simulation to "metal," which implies the use of angstroms for distance, picoseconds for time, electron volts for energy, etc.
+dimension 3    # Specifies that the simulation is in three dimensions.
+boundary p p p    # Sets the boundary conditions in the x, y, and z directions to periodic (p), meaning the system will wrap around at the boundaries.
+atom_style atomic    # Defines the style of atoms being simulated as atomic, which is suitable for simulations of individual atoms without internal structure.
+variable latparam equal 4.05    # Defines a variable latparam, which is set to 4.05, representing the lattice parameter (in angstroms) of the FCC lattice of aluminum.
+
+
+## ATOM DEFINITION
+lattice	fcc ${latparam}    # Defines a face-centered cubic (FCC) lattice with the lattice parameter equal to latparam (4.05 angstroms).
+region whole block 0 30 0 30 0 30    # Creates a simulation region named whole that spans from 0 to 30 units in each dimension (x, y, z).
+create_box 1 whole    # Creates a simulation box with one atom type in the whole region.
+region upper block INF INF INF INF INF INF units box    # Defines another region upper that extends infinitely in all directions (but is effectively the entire box since it covers the whole space).
+lattice fcc ${latparam} orient x 1 0 0 orient y 0 1 0 orient z 0 0 1    # Sets the FCC lattice orientation in the upper region with the x, y, and z axes aligned with the respective crystal directions.
+create_atoms 1 region upper    # Creates atoms of type 1 in the upper region according to the defined lattice structure.
+
+
+## FORCE FIELDS
+pair_style eam/alloy    # Specifies the use of the Embedded Atom Method (EAM) for alloy systems as the interatomic potential.
+pair_coeff * * Al99.eam.alloy Al    # Defines the parameters for the EAM potential, indicating that the file Al99.eam.alloy is used to model the interactions for aluminum atoms.
+
+
+## SETTINGS
+compute csym all centro/atom fcc    # Computes the centrosymmetry parameter for each atom, which is useful for identifying defects or disordered regions in an FCC lattice.
+compute peratom all pe/atom    # Calculates the potential energy per atom.
+
+
+## EQUILIBRATION
+reset_timestep 0    # Resets the timestep counter to 0.
+timestep 0.001    # Sets the timestep to 0.001 picoseconds (1 femtosecond).
+velocity all create 300 12345 mom yes rot no    # Assigns initial velocities to all atoms to achieve a temperature of 300 K, with a random seed of 12345. The mom yes and rot no options ensure that the system has zero net momentum and no initial rotation.
+fix 1 all npt temp 300 300 1 iso 0 0 1 drag 1    # Applies a Nose-Hoover barostat and thermostat (fix npt) to maintain the temperature at 300 K and apply isotropic pressure control with a relaxation time of 1 ps.
+thermo 1000    # Specifies that thermodynamic output will be printed every 1000 timesteps.
+thermo_style custom step lx ly lz press pxx pyy pzz pe temp    # Customizes the thermodynamic output to include the step number, box dimensions (lx, ly, lz), pressure components (pxx, pyy, pzz), potential energy, and temperature.
+run 20000    # Runs the simulation for 20,000 timesteps, which equates to 20 picoseconds.
+unfix 1    # Removes the previous fix (npt), allowing for new conditions to be applied.
+
+## Store final cell length for strain calculations
+variable tmp equal "lx"    # Defines a variable named tmp and assigns it the current length of the simulation box in the x-direction (lx). lx is a built-in LAMMPS variable that represents the x-dimension of the simulation box.
+variable L0 equal ${tmp}    # Defines a variable named L0 and assigns it the value stored in tmp, which is the initial length of the simulation box in the x-direction. This variable will be used as a reference length (L0) for strain calculations.
+print "Initial Length, L0: ${L0}"    # Outputs the initial length of the simulation box (L0) to the screen or log file. This allows the user to see the initial length of the simulation box before any deformation occurs.
+
+
+# DEFORMATION
+reset_timestep	0    # Resets the timestep counter to 0 again before starting the deformation process.
+fix	1 all npt temp 300 300 1 y 0 0 1 z 0 0 1 drag 1    # Applies a Nose-Hoover barostat and thermostat again, but this time only along the y and z directions, keeping the temperature at 300 K.
+variable srate equal 1.0e10    # Defines a strain rate of 1.0×10^10 per second.
+variable srate1 equal "-v_srate / 1.0e12"    # Converts the strain rate to units of box deformation per timestep.
+fix	2 all deform 1 x erate ${srate1} units box remap x    # Applies a constant strain rate along the x-axis to deform the simulation box. The remap x option adjusts atom positions accordingly.
+
+
+## OUTPUT
+variable strain equal "(lx - v_L0)/v_L0"    # Defines a variable strain to calculate the engineering strain based on the change in box length (lx) relative to the initial length (L0).
+variable p1 equal "v_strain"    # Stores the strain value in a variable p1.
+variable p2 equal "-pxx/10000"    # Converts the x-component of pressure to GPa and stores it in p2.
+variable p3 equal "-pyy/10000"    # Converts the y-component of pressure to GPa and stores it in p3.
+variable p4 equal "-pzz/10000"    # Converts the z-component of pressure to GPa and stores it in p4.
+fix def1 all print 100 "${p1} ${p2} ${p3} ${p4}" file Al_comp_100.def1.txt screen no    # Prints the strain and stress values (p1, p2, p3, p4) every 100 timesteps to a file named Al_comp_100.def1.txt.
+dump 1 all custom 250 dump.comp.* id type xs ys zs c_csym c_peratom fx fy fz   # Dumps atom positions and other computed quantities to files (dump.comp.*) every 250 timesteps for visualization in Ovito or another post-processing tool.
+thermo 1000    # Sets the thermodynamic output frequency to every 1000 timesteps.
+thermo_style custom step v_strain temp v_p2 v_p3 v_p4 ke pe press    # Customizes the thermodynamic output to include the timestep, strain, temperature, stress components (v_p2, v_p3, v_p4), kinetic energy, potential energy, and pressure.
+run	20000    # Runs the deformation simulation for 20,000 timesteps (20 ps).
+
+
+## SIMULATION DONE
+print "All done"    # Prints a message indicating that the simulation is complete.
