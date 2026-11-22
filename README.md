@@ -10,7 +10,7 @@ This repository is a project showcase, not a maintained library.
 
 <table>
 <tr>
-<td width="33%" valign="top"><b>1 · Aluminum compression</b> (OVITO)<br><a href="https://youtu.be/MAqs_rzF99Q"><img src="https://img.youtube.com/vi/MAqs_rzF99Q/mqdefault.jpg" width="100%" alt="Video thumbnail: aluminum crystal compressed along [100], rendered in OVITO"></a></td>
+<td width="33%" valign="top"><b>1 · Aluminum</b> (OVITO)<br><a href="https://youtu.be/MAqs_rzF99Q"><img src="https://img.youtube.com/vi/MAqs_rzF99Q/mqdefault.jpg" width="100%" alt="Video thumbnail: aluminum crystal compressed along [100], rendered in OVITO"></a></td>
 <td width="33%" valign="top"><b>2 · Reactive silica</b> (OVITO)<br><a href="https://youtu.be/7WGU4Vd_EPI"><img src="https://img.youtube.com/vi/7WGU4Vd_EPI/mqdefault.jpg" width="100%" alt="Video thumbnail: silica stretched with ReaxFF, rendered in OVITO"></a></td>
 <td width="33%" valign="top"><b>2 · Reactive silica</b> (VMD)<br><a href="https://youtu.be/Iwgavmr_3eg"><img src="https://img.youtube.com/vi/Iwgavmr_3eg/mqdefault.jpg" width="100%" alt="Video thumbnail: silica stretched with ReaxFF, rendered in VMD"></a></td>
 </tr>
